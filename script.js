@@ -2,17 +2,10 @@
 let currentUser = null;
 let documents = [];
 let unsubscribeDocuments = null;
-let documentToDelete = null;
 let isLoginMode = true;
 
 // DOM Elements
 const authPages = document.getElementById('auth-pages');
-const mainContent = document.getElementById('main-content');
-const header = document.getElementById('header');
-const userEmail = document.getElementById('user-email');
-const logoutBtn = document.getElementById('logout-btn');
-
-// Auth elements
 const authForm = document.getElementById('auth-form');
 const authTitle = document.getElementById('auth-title');
 const authSubmit = document.getElementById('auth-submit');
@@ -25,13 +18,22 @@ const authSuccess = document.getElementById('auth-success');
 
 // Initialize the app
 function initApp() {
-    // Check if user is already logged in
+    console.log('Initializing app...');
+    
+    // Check if Firebase is properly loaded
+    if (typeof firebase === 'undefined') {
+        console.error('Firebase is not loaded');
+        authError.textContent = 'Error: Firebase not loaded. Please check your connection.';
+        return;
+    }
+
+    // Auth state observer
     auth.onAuthStateChanged((user) => {
+        console.log('Auth state changed:', user ? 'User logged in' : 'User logged out');
         if (user) {
             // User is signed in
             currentUser = user;
-            showMainApp();
-            setupDocumentsListener();
+            redirectToDashboard();
         } else {
             // User is signed out
             currentUser = null;
@@ -46,16 +48,28 @@ function initApp() {
     setupEventListeners();
 }
 
+// Redirect to dashboard if user is authenticated
+function redirectToDashboard() {
+    console.log('Redirecting to dashboard...');
+    window.location.href = 'dashboard.html';
+}
+
 // Set up all event listeners
 function setupEventListeners() {
     // Auth form submission
-    authForm.addEventListener('submit', handleAuthSubmit);
+    if (authForm) {
+        authForm.addEventListener('submit', handleAuthSubmit);
+    }
     
     // Auth mode switch
-    authSwitchLink.addEventListener('click', toggleAuthMode);
+    if (authSwitchLink) {
+        authSwitchLink.addEventListener('click', toggleAuthMode);
+    }
     
     // Forgot password
-    forgotPasswordLink.addEventListener('click', handleForgotPassword);
+    if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener('click', handleForgotPassword);
+    }
 }
 
 // Toggle between login and signup modes
@@ -94,12 +108,14 @@ function handleAuthSubmit(e) {
     if (isLoginMode) {
         // Login
         auth.signInWithEmailAndPassword(email, password)
-            .then(() => {
+            .then((userCredential) => {
                 hideLoading();
+                console.log('User logged in:', userCredential.user.email);
                 // Success handled by auth state change
             })
             .catch((error) => {
                 hideLoading();
+                console.error('Login error:', error);
                 authError.textContent = error.message;
             });
     } else {
@@ -129,9 +145,11 @@ function handleAuthSubmit(e) {
             .then(() => {
                 hideLoading();
                 authSuccess.textContent = 'Account created successfully!';
+                console.log('User account created');
             })
             .catch((error) => {
                 hideLoading();
+                console.error('Signup error:', error);
                 authError.textContent = error.message;
             });
     }
@@ -158,120 +176,28 @@ function handleForgotPassword(e) {
 
 // Show authentication pages
 function showAuthPages() {
-    authPages.classList.remove('hidden');
-    mainContent.classList.add('hidden');
-    if (header) header.classList.add('hidden');
+    if (authPages) authPages.classList.remove('hidden');
 }
 
-// Show main application
-function showMainApp() {
-    authPages.classList.add('hidden');
-    mainContent.classList.remove('hidden');
-    if (header) header.classList.remove('hidden');
-    
-    // Update user info
-    if (userEmail) {
-        userEmail.textContent = currentUser.email;
+// Show loading indicator
+function showLoading() {
+    let loading = document.getElementById('loading');
+    if (!loading) {
+        loading = document.createElement('div');
+        loading.id = 'loading';
+        loading.className = 'loading';
+        loading.innerHTML = '<div class="spinner"></div>';
+        document.body.appendChild(loading);
     }
+    loading.classList.remove('hidden');
 }
 
-// Set up real-time listener for user's documents
-function setupDocumentsListener() {
-    if (!currentUser) return;
-    
-    unsubscribeDocuments = db.collection('documents')
-        .where('userId', '==', currentUser.uid)
-        .orderBy('expiryDate', 'asc')
-        .onSnapshot((snapshot) => {
-            documents = [];
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                documents.push({
-                    id: doc.id,
-                    ...data,
-                    // Convert Firestore timestamps to Date objects
-                    expiryDate: data.expiryDate?.toDate ? data.expiryDate.toDate() : new Date(data.expiryDate),
-                    issueDate: data.issueDate?.toDate ? data.issueDate.toDate() : new Date(data.issueDate),
-                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
-                });
-            });
-            
-            updateDashboard();
-            checkReminders();
-        }, (error) => {
-            console.error('Error getting documents: ', error);
-        });
-}
-
-// Update dashboard with document statistics
-function updateDashboard() {
-    if (!document.getElementById('total-docs')) return;
-    
-    const total = documents.length;
-    const active = documents.filter(doc => getDocumentStatus(doc.expiryDate) === 'active').length;
-    const expiring = documents.filter(doc => getDocumentStatus(doc.expiryDate) === 'expiring').length;
-    const expired = documents.filter(doc => getDocumentStatus(doc.expiryDate) === 'expired').length;
-    
-    document.getElementById('total-docs').textContent = total;
-    document.getElementById('active-docs').textContent = active;
-    document.getElementById('expiring-docs').textContent = expiring;
-    document.getElementById('expired-docs').textContent = expired;
-    
-    // Update alerts
-    updateAlerts();
-}
-
-// Update alerts list
-function updateAlerts() {
-    const alertsList = document.getElementById('alerts-list');
-    if (!alertsList) return;
-    
-    alertsList.innerHTML = '';
-    
-    const today = new Date();
-    const alerts = [];
-    
-    documents.forEach(doc => {
-        const daysRemaining = getDaysRemaining(doc.expiryDate);
-        
-        if (daysRemaining <= 30 && daysRemaining > 0) {
-            alerts.push({
-                type: 'expiring',
-                title: `${doc.name} is expiring soon`,
-                date: `Expires in ${daysRemaining} days`,
-                docId: doc.id
-            });
-        } else if (daysRemaining <= 0) {
-            alerts.push({
-                type: 'expired',
-                title: `${doc.name} has expired`,
-                date: `Expired ${Math.abs(daysRemaining)} days ago`,
-                docId: doc.id
-            });
-        }
-    });
-    
-    if (alerts.length === 0) {
-        alertsList.innerHTML = `
-            <div class="empty-state">
-                <p>No upcoming alerts. All documents are up to date.</p>
-            </div>
-        `;
-        return;
+// Hide loading indicator
+function hideLoading() {
+    const loading = document.getElementById('loading');
+    if (loading) {
+        loading.classList.add('hidden');
     }
-    
-    alerts.forEach(alert => {
-        const alertItem = document.createElement('div');
-        alertItem.className = 'alert-item';
-        alertItem.innerHTML = `
-            <span class="alert-icon ${alert.type}"></span>
-            <div class="alert-content">
-                <div class="alert-title">${alert.title}</div>
-                <div class="alert-date">${alert.date}</div>
-            </div>
-        `;
-        alertsList.appendChild(alertItem);
-    });
 }
 
 // Utility function to get document status
@@ -308,62 +234,6 @@ function formatDate(date) {
     return dateObj.toLocaleDateString(undefined, options);
 }
 
-// Check for reminders and show alerts
-function checkReminders() {
-    const today = new Date().toDateString();
-    const preferences = JSON.parse(localStorage.getItem('notificationPreferences') || '{}');
-    
-    // Set default preferences if not set
-    if (Object.keys(preferences).length === 0) {
-        preferences.notify30Days = true;
-        preferences.notify7Days = true;
-        preferences.notify1Day = true;
-        preferences.notifyExpired = true;
-        localStorage.setItem('notificationPreferences', JSON.stringify(preferences));
-    }
-    
-    documents.forEach(doc => {
-        const daysRemaining = getDaysRemaining(doc.expiryDate);
-        
-        // Check if we should show a reminder based on user preferences
-        if (preferences.notify30Days && daysRemaining === 30) {
-            showReminderAlert(doc, 30);
-        } else if (preferences.notify7Days && daysRemaining === 7) {
-            showReminderAlert(doc, 7);
-        } else if (preferences.notify1Day && daysRemaining === 1) {
-            showReminderAlert(doc, 1);
-        } else if (preferences.notifyExpired && daysRemaining === 0) {
-            showReminderAlert(doc, 0);
-        }
-    });
-}
-
-// Show reminder alert
-function showReminderAlert(doc, days) {
-    const message = days > 0 
-        ? `🔔 Reminder: Your ${doc.name} (${doc.type}) expires in ${days} days`
-        : `⚠️ Alert: Your ${doc.name} (${doc.type}) has expired`;
-        
-    // Check if we've already shown this alert today
-    const alertKey = `alert_${doc.id}_${days}`;
-    const lastAlertDate = localStorage.getItem(alertKey);
-    const today = new Date().toDateString();
-    
-    if (lastAlertDate !== today) {
-        // Use browser notification if available
-        if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Expiry Tracker', {
-                body: message,
-                icon: '/favicon.ico'
-            });
-        } else {
-            // Fallback to alert
-            alert(message);
-        }
-        localStorage.setItem(alertKey, today);
-    }
-}
-
 // Request notification permission
 function requestNotificationPermission() {
     if ('Notification' in window && Notification.permission === 'default') {
@@ -371,39 +241,9 @@ function requestNotificationPermission() {
     }
 }
 
-// Show loading indicator
-function showLoading() {
-    // Create loading element if it doesn't exist
-    let loading = document.getElementById('loading');
-    if (!loading) {
-        loading = document.createElement('div');
-        loading.id = 'loading';
-        loading.className = 'loading';
-        loading.innerHTML = '<div class="spinner"></div>';
-        document.body.appendChild(loading);
-    }
-    loading.classList.remove('hidden');
-}
-
-// Hide loading indicator
-function hideLoading() {
-    const loading = document.getElementById('loading');
-    if (loading) {
-        loading.classList.add('hidden');
-    }
-}
-
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing app...');
     initApp();
     requestNotificationPermission();
 });
-
-// Export functions for use in other files
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        getDocumentStatus,
-        getDaysRemaining,
-        formatDate
-    };
-}
