@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Expiry Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <nav class="navbar">
+                <a href="dashboard.html" class="logo">📅 Expiry Tracker</a>
+                <ul class="nav-links">
+                    <li><a href="dashboard.html" class="active">Dashboard</a></li>
+                    <li><a href="documents.html">Documents</a></li>
+                    <li><a href="add-document.html">Add Document</a></li>
+                    <li><a href="settings.html">Settings</a></li>
+                </ul>
+                <div class="user-info">
+                    <span class="user-email" id="user-email"></span>
+                    <button class="btn btn-outline" id="logout-btn">Logout</button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div id="dashboard-page" class="page">
+            <h1 class="page-title">Dashboard</h1>
+            
+            <div class="stats-grid">
+                <div class="stat-card total">
+                    <div class="stat-label">Total Documents</div>
+                    <div class="stat-number" id="total-docs">0</div>
+                </div>
+                <div class="stat-card active">
+                    <div class="stat-label">Active</div>
+                    <div class="stat-number" id="active-docs">0</div>
+                </div>
+                <div class="stat-card expiring">
+                    <div class="stat-label">Expiring Soon</div>
+                    <div class="stat-number" id="expiring-docs">0</div>
+                </div>
+                <div class="stat-card expired">
+                    <div class="stat-label">Expired</div>
+                    <div class="stat-number" id="expired-docs">0</div>
+                </div>
+            </div>
+            
+            <div class="alerts-section">
+                <h2>Upcoming Alerts</h2>
+                <div id="alerts-list">
+                    <div class="empty-state">
+                        <p>No upcoming alerts. All documents are up to date.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // Dashboard specific functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    firebase.auth().signOut().then(() => {
+                        window.location.href = 'index.html';
+                    });
+                });
+            }
+            
+            // Check auth state
+            firebase.auth().onAuthStateChanged((user) => {
+                if (!user) {
+                    window.location.href = 'index.html';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
