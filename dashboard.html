@@ -78,10 +78,25 @@
     <script>
         // Dashboard specific functionality
         document.addEventListener('DOMContentLoaded', function() {
+            // Utility functions to manage the loading spinner
+            function showLoading() {
+                const loading = document.getElementById('loading');
+                if (loading) loading.classList.remove('hidden');
+            }
+            
+            function hideLoading() {
+                const loading = document.getElementById('loading');
+                if (loading) loading.classList.add('hidden');
+            }
+
+            // Show loading immediately as data fetch is the next step
+            showLoading(); 
+
             const logoutBtn = document.getElementById('logout-btn');
             let unsubscribeDocuments = null;
             let documents = [];
-            
+            let isInitialLoad = true; // Flag to track the first data snapshot
+
             // Initialize Firebase services from config
             const auth = firebase.auth();
             const db = firebase.firestore();
@@ -115,6 +130,7 @@
                         documents = [];
                         snapshot.forEach(doc => {
                             const data = doc.data();
+                            // Ensure date objects are correctly parsed
                             documents.push({
                                 id: doc.id,
                                 ...data,
@@ -126,8 +142,16 @@
                         
                         updateDashboard();
                         checkReminders();
+
+                        // Hide the loading spinner only after the initial data load is complete
+                        if (isInitialLoad) {
+                            hideLoading();
+                            isInitialLoad = false;
+                        }
                     }, (error) => {
                         console.error('Error getting documents: ', error);
+                        // Hide loading on error to prevent infinite spin
+                        hideLoading();
                     });
             }
             
@@ -244,20 +268,12 @@
                         });
                     } else {
                         // Fallback to alert
-                        alert(message);
+                        // WARNING: This application uses the non-recommended `alert()` function.
+                        // For a better user experience, this should be replaced with a custom modal.
+                        alert(message); 
                     }
                     localStorage.setItem(alertKey, today);
                 }
-            }
-            
-            function showLoading() {
-                const loading = document.getElementById('loading');
-                if (loading) loading.classList.remove('hidden');
-            }
-            
-            function hideLoading() {
-                const loading = document.getElementById('loading');
-                if (loading) loading.classList.add('hidden');
             }
         });
     </script>
