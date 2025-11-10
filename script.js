@@ -50,8 +50,10 @@ function initApp() {
 
 // Redirect to dashboard if user is authenticated
 function redirectToDashboard() {
-    console.log('Redirecting to dashboard...');
+  console.log('Redirecting to dashboard...');
+  if (!window.location.href.includes('dashboard.html')) {
     window.location.href = 'dashboard.html';
+  }
 }
 
 // Set up all event listeners
