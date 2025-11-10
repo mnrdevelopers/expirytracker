@@ -10,24 +10,12 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-} else {
-    firebase.app(); // if already initialized, use that one
-}
+firebase.initializeApp(firebaseConfig);
 
-// Firebase services
+// Initialize services
 const auth = firebase.auth();
 const db = firebase.firestore();
-const storage = firebase.storage();
 
-// Firestore settings for offline support
-db.enablePersistence()
-  .catch((err) => {
-      console.log('Firebase persistence error: ', err);
-  });
-
-// Export for use in other files
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { auth, db, storage };
-}
+// Make sure they are globally accessible
+window.auth = auth;
+window.db = db;
