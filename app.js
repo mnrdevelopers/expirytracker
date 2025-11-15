@@ -966,339 +966,81 @@ function updateUserProfile(user) {
     }
 }
 
-// Initialize push notifications
-async function initializePushNotifications() {
-    try {
-        // Check if messaging is available
-        if (!isMessagingAvailable()) {
-            console.warn('Firebase Messaging is not available');
-            return;
-        }
-
-        // Check if notifications are supported
-        if (!('Notification' in window)) {
-            console.warn('This browser does not support notifications');
-            return;
-        }
-
-        // Register service worker first
-        await registerServiceWorker();
-
-        // Request notification permission
-        const permission = await Notification.requestPermission();
-        
-        if (permission === 'granted') {
-            console.log('Notification permission granted.');
-            
-            try {
-                // Get FCM token
-                fcmToken = await messaging.getToken();
-                
-                if (fcmToken) {
-                    console.log('FCM Token obtained:', fcmToken);
-                    await saveFCMToken(fcmToken);
-                    setupMessageHandlers();
-                    
-                    // Show success message
-                    showToast('Push notifications enabled!', 'success');
-                } else {
-                    console.log('No registration token available.');
-                    showToast('Could not enable push notifications', 'error');
-                }
-            } catch (tokenError) {
-                console.error('Error getting FCM token:', tokenError);
-                showToast('Error enabling push notifications', 'error');
-            }
-        } else {
-            console.log('Notification permission denied.');
-            showToast('Please enable notifications for expiry reminders', 'warning');
-        }
-    } catch (error) {
-        console.error('Error initializing push notifications:', error);
-        // Fallback to local notifications
-        initializeLocalNotifications();
-    }
+// Email notification functions
+async function initializeEmailNotifications() {
+    console.log('Email notifications enabled');
+    showToast('Email reminders will be sent for expiring documents', 'success');
 }
 
-// Save FCM token to Firestore
-async function saveFCMToken(token) {
-    if (!currentUser) return;
-    
+// Save email preferences
+async function saveEmailPreferences(preferences) {
     try {
         await db.collection('users').doc(currentUser.uid).set({
-            fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            email: currentUser.email,
-            displayName: currentUser.displayName,
-            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+            emailPreferences: preferences,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
         
-        console.log('FCM token saved to Firestore');
+        showToast('Email preferences saved!', 'success');
+        return true;
     } catch (error) {
-        console.error('Error saving FCM token:', error);
+        console.error('Error saving email preferences:', error);
+        showToast('Error saving preferences', 'error');
+        return false;
     }
 }
 
-// Remove FCM token when user logs out
-async function removeFCMToken(token) {
-    if (!currentUser || !token) return;
+// Test email notification
+async function testEmailNotification() {
+    if (!currentUser || documents.length === 0) {
+        showToast('No documents available for testing', 'warning');
+        return;
+    }
     
     try {
-        await db.collection('users').doc(currentUser.uid).update({
-            fcmTokens: firebase.firestore.FieldValue.arrayRemove(token)
+        const sendTestNotification = functions.httpsCallable('sendManualEmailNotification');
+        const result = await sendTestNotification({
+            userId: currentUser.uid,
+            docId: documents[0].id
         });
         
-        console.log('FCM token removed from Firestore');
+        showToast('Test email sent! Check your inbox.', 'success');
     } catch (error) {
-        console.error('Error removing FCM token:', error);
+        console.error('Error sending test email:', error);
+        showToast('Failed to send test email', 'error');
     }
 }
 
-// Setup message handlers for foreground messages
-function setupMessageHandlers() {
-    if (!isMessagingAvailable()) return;
-
-    // Handle foreground messages
-    messaging.onMessage((payload) => {
-        console.log('Received foreground message: ', payload);
-        
-        // Show in-app notification
-        showCustomNotification(payload);
-    });
-
-    // Handle token refresh
-    messaging.onTokenRefresh(async () => {
-        try {
-            const newToken = await messaging.getToken();
-            console.log('FCM token refreshed:', newToken);
-            
-            if (fcmToken && currentUser) {
-                // Remove old token
-                await removeFCMToken(fcmToken);
-            }
-            
-            fcmToken = newToken;
-            await saveFCMToken(newToken);
-        } catch (error) {
-            console.error('Error refreshing FCM token:', error);
-        }
-    });
-}
-
-// Real implementation of sendPushNotification using Cloud Functions
-async function sendPushNotification(userId, title, body, data = {}) {
-    try {
-        if (!currentUser || currentUser.uid !== userId) {
-            throw new Error('Unauthorized to send notifications');
-        }
-
-        // Call Cloud Function to send notification
-        const sendNotification = functions.httpsCallable('sendManualNotification');
-        const result = await sendNotification({
-            userId: userId,
-            title: title,
-            body: body,
-            data: data
-        });
-
-        console.log('Push notification sent via Cloud Function:', result);
-        return result;
-
-    } catch (error) {
-        console.error('Error sending push notification via Cloud Function:', error);
-        
-        // Fallback to local notification
-        if ('Notification' in window && Notification.permission === 'granted') {
-            const notification = new Notification(title, {
-                body: body,
-                icon: '/icon-192.png',
-                badge: '/icon-192.png',
-                tag: 'expiry-tracker',
-                requireInteraction: true,
-                data: data
-            });
-            
-            notification.onclick = () => {
-                window.focus();
-                if (data.page && !window.location.href.includes(data.page)) {
-                    window.location.href = data.page;
-                }
-                notification.close();
-            };
-            
-            setTimeout(() => {
-                notification.close();
-            }, 10000);
-        }
-        
-        throw error;
-    }
-}
-
-// Enhanced reminder system with real push notifications
+// Enhanced reminder system with email
 async function checkReminders() {
-    const preferences = JSON.parse(localStorage.getItem('notificationPreferences') || '{}');
+    // This will now be handled by Cloud Functions automatically
+    // We'll just show local alerts for immediate visibility
+    const today = new Date();
     
-    for (const doc of documents) {
+    documents.forEach(doc => {
         const daysRemaining = getDaysRemaining(doc.expiryDate);
-        
-        // Check if we should show a reminder based on user preferences
-        const alertKey = `alert_${doc.id}_${daysRemaining}`;
+        const alertKey = `local_alert_${doc.id}_${daysRemaining}`;
         const lastAlertDate = localStorage.getItem(alertKey);
-        const todayStr = new Date().toDateString();
+        const todayStr = today.toDateString();
         
-        if (lastAlertDate !== todayStr) {
-            let shouldNotify = false;
+        if (lastAlertDate !== todayStr && daysRemaining <= 7) {
             let message = '';
             let type = 'info';
             
-            if (preferences.notify30Days && daysRemaining === 30) {
-                shouldNotify = true;
-                message = `Your ${doc.name} (${doc.type}) expires in 30 days`;
-                type = 'warning';
-            } else if (preferences.notify7Days && daysRemaining === 7) {
-                shouldNotify = true;
-                message = `Your ${doc.name} (${doc.type}) expires in 7 days`;
-                type = 'warning';
-            } else if (preferences.notify1Day && daysRemaining === 1) {
-                shouldNotify = true;
-                message = `Your ${doc.name} (${doc.type}) expires tomorrow`;
-                type = 'warning';
-            } else if (preferences.notifyExpired && daysRemaining <= 0) {
-                shouldNotify = true;
-                message = `Your ${doc.name} (${doc.type}) has expired`;
+            if (daysRemaining <= 0) {
+                message = `🚨 ${doc.name} has EXPIRED!`;
                 type = 'error';
+            } else if (daysRemaining === 1) {
+                message = `⚠️ ${doc.name} expires TOMORROW!`;
+                type = 'warning';
+            } else if (daysRemaining <= 7) {
+                message = `🔔 ${doc.name} expires in ${daysRemaining} days`;
+                type = 'warning';
             }
             
-            if (shouldNotify && message && currentUser) {
-                try {
-                    // Send real push notification via Cloud Function
-                    await sendPushNotification(
-                        currentUser.uid,
-                        'Expiry Tracker Alert',
-                        message,
-                        { 
-                            page: 'documents.html', 
-                            docId: doc.id,
-                            type: type,
-                            docName: doc.name,
-                            docType: doc.type
-                        }
-                    );
-                    
-                    // Show local toast as well
-                    showToast(message, type);
-                    
-                    console.log(`Notification sent for document: ${doc.name}`);
-                    
-                } catch (error) {
-                    console.error('Failed to send push notification:', error);
-                    // Fallback to local notification only
-                    showToast(message, type);
-                }
-                
+            if (message) {
+                showToast(message, type);
                 localStorage.setItem(alertKey, todayStr);
             }
         }
-    }
-}
-
-// Test notification function (for development)
-async function testPushNotification() {
-    if (!currentUser) return;
-    
-    try {
-        await sendPushNotification(
-            currentUser.uid,
-            'Test Notification',
-            'This is a test push notification from Expiry Tracker',
-            { page: 'dashboard.html', type: 'info', test: true }
-        );
-        showToast('Test notification sent!', 'success');
-    } catch (error) {
-        showToast('Failed to send test notification', 'error');
-    }
-}
-
-// Add test button to settings page (optional)
-function addTestNotificationButton() {
-    const settingsCard = document.querySelector('.form-card');
-    if (settingsCard && currentUser) {
-        const testSection = document.createElement('div');
-        testSection.className = 'form-group';
-        testSection.innerHTML = `
-            <div class="setting-item">
-                <div class="setting-content">
-                    <div class="setting-title">Test Push Notifications</div>
-                    <div class="setting-description">Send a test notification to verify setup</div>
-                </div>
-                <button class="btn btn-outline" id="test-notification-btn">
-                    <i class="fas fa-bell"></i>
-                    Test
-                </button>
-            </div>
-        `;
-        settingsCard.appendChild(testSection);
-        
-        document.getElementById('test-notification-btn').addEventListener('click', testPushNotification);
-    }
-}
-
-// Safe access to Firebase services
-function getMessaging() {
-    return window.firebaseServices?.messaging || messaging;
-}
-
-function getFunctions() {
-    return window.firebaseServices?.functions || functions;
-}
-
-// Check if messaging is available
-function isMessagingAvailable() {
-    const messagingService = getMessaging();
-    return messagingService !== null && typeof messagingService !== 'undefined';
-}
-
-// Check if functions are available
-function isFunctionsAvailable() {
-    const functionsService = getFunctions();
-    return functionsService !== null && typeof functionsService !== 'undefined';
-}
-
-// Service Worker Registration for GitHub Pages
-async function registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
-        try {
-            // Calculate correct path for GitHub Pages
-            const currentPath = window.location.pathname;
-            const basePath = currentPath.substring(0, currentPath.lastIndexOf('/'));
-            const swPath = `${basePath}/firebase-messaging-sw.js`;
-            
-            console.log('Registering service worker from:', swPath);
-            
-            const registration = await navigator.serviceWorker.register(swPath, {
-                scope: basePath + '/'
-            });
-            
-            console.log('ServiceWorker registration successful with scope: ', registration.scope);
-            return registration;
-        } catch (error) {
-            console.error('ServiceWorker registration failed: ', error);
-            
-            // Try fallback path
-            try {
-                console.log('Trying fallback service worker registration...');
-                const fallbackRegistration = await navigator.serviceWorker.register('./firebase-messaging-sw.js', {
-                    scope: './'
-                });
-                console.log('Fallback ServiceWorker registration successful');
-                return fallbackRegistration;
-            } catch (fallbackError) {
-                console.error('Fallback ServiceWorker registration also failed: ', fallbackError);
-                throw error; // Throw original error
-            }
-        }
-    } else {
-        throw new Error('Service workers are not supported in this browser');
-    }
+    });
 }
