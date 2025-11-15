@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings - Expiry Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     
     <!-- Firebase SDKs -->
@@ -14,55 +15,164 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <nav class="navbar">
-                <a href="dashboard.html" class="logo">Expiry Tracker</a>
-                <ul class="nav-links">
-                    <li><a href="dashboard.html">Dashboard</a></li>
-                    <li><a href="documents.html">Documents</a></li>
-                    <li><a href="add.html">Add Document</a></li>
-                    <li><a href="settings.html" class="active">Settings</a></li>
-                </ul>
-                <div class="user-info">
-                    <span class="user-email" id="user-email"></span>
-                    <button class="btn btn-outline" id="logout-btn">Logout</button>
-                </div>
-            </nav>
+    <!-- Header with Hamburger -->
+    <header class="header">
+        <div class="navbar">
+            <a href="dashboard.html" class="logo">ExpiryTracker</a>
+            <button class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
         </div>
     </header>
 
-    <main class="container">
-        <h1 class="page-title">Settings</h1>
-        <div class="form-card">
-            <h2 class="form-title">Notification Preferences</h2>
-            <form id="settings-form">
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="notify-30-days" checked> Notify 30 days before expiry
-                    </label>
+    <!-- Sidebar Menu -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3 class="sidebar-title">Menu</h3>
+            <button class="close-sidebar" id="close-sidebar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-user">
+            <div class="user-avatar" id="user-avatar">U</div>
+            <div class="user-info">
+                <h4 id="user-name">User</h4>
+                <p id="user-email">user@example.com</p>
+            </div>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="documents.html"><i class="fas fa-file-alt"></i> Documents</a></li>
+            <li><a href="add.html"><i class="fas fa-plus-circle"></i> Add Document</a></li>
+            <li><a href="settings.html" class="active"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="#" id="sidebar-logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <h1 class="page-title">Settings</h1>
+            
+            <!-- Notification Settings -->
+            <div class="form-card">
+                <h2 class="form-title">
+                    <i class="fas fa-bell"></i>
+                    Notifications
+                </h2>
+                <form id="settings-form">
+                    <div class="form-group">
+                        <label class="setting-item">
+                            <div class="setting-content">
+                                <div class="setting-title">30 Days Before Expiry</div>
+                                <div class="setting-description">Notify me 30 days before documents expire</div>
+                            </div>
+                            <input type="checkbox" id="notify-30-days" checked>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="setting-item">
+                            <div class="setting-content">
+                                <div class="setting-title">7 Days Before Expiry</div>
+                                <div class="setting-description">Notify me 7 days before documents expire</div>
+                            </div>
+                            <input type="checkbox" id="notify-7-days" checked>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="setting-item">
+                            <div class="setting-content">
+                                <div class="setting-title">1 Day Before Expiry</div>
+                                <div class="setting-description">Notify me 1 day before documents expire</div>
+                            </div>
+                            <input type="checkbox" id="notify-1-day" checked>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="setting-item">
+                            <div class="setting-content">
+                                <div class="setting-title">When Expired</div>
+                                <div class="setting-description">Notify me when documents have expired</div>
+                            </div>
+                            <input type="checkbox" id="notify-expired" checked>
+                        </label>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn">
+                            <i class="fas fa-save"></i>
+                            Save Preferences
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Account Settings -->
+            <div class="form-card">
+                <h2 class="form-title">
+                    <i class="fas fa-user"></i>
+                    Account
+                </h2>
+                <div class="settings-list">
+                    <div class="setting-item">
+                        <div class="setting-content">
+                            <div class="setting-title">Email</div>
+                            <div class="setting-description" id="current-email">user@example.com</div>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-content">
+                            <div class="setting-title">Change Password</div>
+                            <div class="setting-description">Update your account password</div>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-content">
+                            <div class="setting-title">Privacy Policy</div>
+                            <div class="setting-description">How we handle your data</div>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="notify-7-days" checked> Notify 7 days before expiry
-                    </label>
+            </div>
+
+            <!-- App Info -->
+            <div class="form-card text-center">
+                <div class="empty-state">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>Expiry Tracker</h3>
+                    <p>Version 1.0.0</p>
+                    <button class="btn btn-outline" id="logout-btn" style="margin-top: 20px;">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="notify-1-day" checked> Notify 1 day before expiry
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="notify-expired" checked> Notify when expired
-                    </label>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn">Save Preferences</button>
-                </div>
-            </form>
+            </div>
         </div>
     </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item">
+            <i class="fas fa-home nav-icon"></i>
+            <span class="nav-label">Home</span>
+        </a>
+        <a href="documents.html" class="nav-item">
+            <i class="fas fa-file-alt nav-icon"></i>
+            <span class="nav-label">Docs</span>
+        </a>
+        <a href="add.html" class="nav-item">
+            <i class="fas fa-plus nav-icon"></i>
+            <span class="nav-label">Add</span>
+        </a>
+        <a href="settings.html" class="nav-item active">
+            <i class="fas fa-cog nav-icon"></i>
+            <span class="nav-label">Settings</span>
+        </a>
+    </nav>
 
     <script src="firebase-config.js"></script>
     <script src="app.js"></script>
@@ -70,6 +180,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             initApp();
             loadSettings();
+            setupMobileNavigation();
         });
     </script>
 </body>
