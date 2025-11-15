@@ -34,11 +34,19 @@ function initApp() {
             // Update user profile information
             updateUserProfile(user);
             
-            // Initialize push notifications (safely)
+            // Add test notification button to settings
+            if (window.location.pathname.includes('settings.html')) {
+                addTestNotificationButton();
+            }
+            
+            // Try to initialize push notifications
             try {
                 await initializePushNotifications();
             } catch (error) {
-                console.warn('Push notifications not available:', error);
+                console.warn('Push notifications failed, falling back to local notifications:', error);
+                
+                // Fallback to local notifications
+                initializeLocalNotifications();
             }
             
             // Redirect to dashboard if on login page
