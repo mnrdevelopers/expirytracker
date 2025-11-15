@@ -20,22 +20,21 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
+// Initialize Cloud Functions
+const functions = firebase.functions();
+
 // Make sure they are globally accessible
 window.auth = auth;
 window.db = db;
 
-// Initialize Messaging only if it's available (in supported environments)
+// Initialize Messaging
 let messaging = null;
-if (firebase.messaging && typeof firebase.messaging === 'function') {
-    try {
-        messaging = firebase.messaging();
-        
-        // Configure messaging for background notifications
-        messaging.usePublicVapidKey('BNIPHzoLaLW03Tpb0qrqIMgx5M-aFVOndk9-EtIljjiz2NCJkrLzXHxBgmClb7KdX08BOU5fffhDM08Dzs1G8nE'); // Replace with your VAPID key
-        
-    } catch (error) {
-        console.warn('Firebase Messaging initialization failed:', error);
-    }
-} else {
-    console.warn('Firebase Messaging is not available in this environment');
+try {
+    messaging = firebase.messaging();
+    
+    // Use your VAPID key here (get from Firebase Console → Cloud Messaging)
+    messaging.usePublicVapidKey('BNIPHzoLaLW03Tpb0qrqIMgx5M-aFVOndk9-EtIljjiz2NCJkrLzXHxBgmClb7KdX08BOU5fffhDM08Dzs1G8nE');
+    
+} catch (error) {
+    console.warn('Firebase Messaging initialization failed:', error);
 }
