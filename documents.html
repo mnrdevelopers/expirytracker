@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Documents - Expiry Tracker</title>
+    <title>Documents - Expiry Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     
     <!-- Firebase SDKs -->
@@ -14,32 +15,57 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <nav class="navbar">
-                <a href="dashboard.html" class="logo">Expiry Tracker</a>
-                <ul class="nav-links">
-                    <li><a href="dashboard.html">Dashboard</a></li>
-                    <li><a href="documents.html" class="active">Documents</a></li>
-                    <li><a href="add.html">Add Document</a></li>
-                    <li><a href="settings.html">Settings</a></li>
-                </ul>
-                <div class="user-info">
-                    <span class="user-email" id="user-email"></span>
-                    <button class="btn btn-outline" id="logout-btn">Logout</button>
-                </div>
-            </nav>
+    <!-- Header with Hamburger -->
+    <header class="header">
+        <div class="navbar">
+            <a href="dashboard.html" class="logo">ExpiryTracker</a>
+            <button class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
         </div>
     </header>
 
-    <main class="container">
-        <div class="documents-header">
-            <h1 class="page-title">My Documents</h1>
-            <a href="add.html" class="btn" id="add-document-btn">Add Document</a>
+    <!-- Sidebar Menu -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3 class="sidebar-title">Menu</h3>
+            <button class="close-sidebar" id="close-sidebar">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
         
-        <div id="documents-list" class="documents-grid">
-            <!-- Documents will be populated here -->
+        <div class="sidebar-user">
+            <div class="user-avatar" id="user-avatar">U</div>
+            <div class="user-info">
+                <h4 id="user-name">User</h4>
+                <p id="user-email">user@example.com</p>
+            </div>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="documents.html" class="active"><i class="fas fa-file-alt"></i> Documents</a></li>
+            <li><a href="add.html"><i class="fas fa-plus-circle"></i> Add Document</a></li>
+            <li><a href="settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="#" id="sidebar-logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="documents-header">
+                <h1 class="page-title">My Documents</h1>
+                <a href="add.html" class="btn">
+                    <i class="fas fa-plus"></i>
+                    Add New
+                </a>
+            </div>
+            
+            <div id="documents-list" class="documents-grid">
+                <!-- Documents will be populated here -->
+            </div>
         </div>
     </main>
 
@@ -65,7 +91,7 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="edit-doc-name">Document Name / Title</label>
+                        <label for="edit-doc-name">Document Name</label>
                         <input type="text" id="edit-doc-name" class="form-control" placeholder="Enter document name" required>
                     </div>
                     <div class="form-group">
@@ -110,6 +136,27 @@
         </div>
     </div>
 
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item">
+            <i class="fas fa-home nav-icon"></i>
+            <span class="nav-label">Home</span>
+        </a>
+        <a href="documents.html" class="nav-item active">
+            <i class="fas fa-file-alt nav-icon"></i>
+            <span class="nav-label">Docs</span>
+        </a>
+        <a href="add.html" class="nav-item">
+            <i class="fas fa-plus nav-icon"></i>
+            <span class="nav-label">Add</span>
+        </a>
+        <a href="settings.html" class="nav-item">
+            <i class="fas fa-cog nav-icon"></i>
+            <span class="nav-label">Settings</span>
+        </a>
+    </nav>
+
+    <!-- Loading -->
     <div id="loading" class="loading hidden">
         <div class="spinner"></div>
     </div>
@@ -120,6 +167,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             initApp();
             loadDocuments();
+            setupMobileNavigation();
         });
     </script>
 </body>
