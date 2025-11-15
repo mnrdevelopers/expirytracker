@@ -78,6 +78,45 @@ function initApp() {
     setupEventListeners();
 }
 
+// Fallback to local notifications
+function initializeLocalNotifications() {
+    console.log('Using local notifications as fallback');
+    
+    // Override the sendPushNotification function to use local notifications
+    window.sendPushNotification = async function(userId, title, body, data = {}) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            const notification = new Notification(title, {
+                body: body,
+                icon: '/icon-192.png',
+                badge: '/icon-192.png',
+                tag: 'expiry-tracker',
+                requireInteraction: true,
+                data: data
+            });
+            
+            notification.onclick = () => {
+                window.focus();
+                if (data.page && !window.location.href.includes(data.page)) {
+                    window.location.href = data.page;
+                }
+                notification.close();
+            };
+            
+            setTimeout(() => {
+                notification.close();
+            }, 10000);
+            
+            return { success: true };
+        } else {
+            // Fallback to toast notification
+            showToast(body, data.type || 'info');
+            return { success: true };
+        }
+    };
+    
+    showToast('Local notifications enabled', 'info');
+}
+
 // Initialize auth functionality for login page
 function initAuth() {
     auth.onAuthStateChanged((user) => {
@@ -942,6 +981,9 @@ async function initializePushNotifications() {
             return;
         }
 
+        // Register service worker first
+        await registerServiceWorker();
+
         // Request notification permission
         const permission = await Notification.requestPermission();
         
@@ -973,6 +1015,8 @@ async function initializePushNotifications() {
         }
     } catch (error) {
         console.error('Error initializing push notifications:', error);
+        // Fallback to local notifications
+        initializeLocalNotifications();
     }
 }
 
