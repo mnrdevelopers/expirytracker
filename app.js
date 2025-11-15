@@ -729,3 +729,137 @@ function showLoading() {
 function hideLoading() {
     if (loading) loading.classList.add('hidden');
 }
+
+// Mobile-specific functionality
+function setupMobileNavigation() {
+    const menuToggle = document.getElementById('menu-toggle');
+    const closeSidebar = document.getElementById('close-sidebar');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    if (menuToggle && sidebar) {
+        function openSidebar() {
+            sidebar.classList.add('active');
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebarFunc() {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        menuToggle.addEventListener('click', openSidebar);
+        if (closeSidebar) closeSidebar.addEventListener('click', closeSidebarFunc);
+        if (overlay) overlay.addEventListener('click', closeSidebarFunc);
+
+        // Close sidebar when clicking on a link
+        document.querySelectorAll('.sidebar-menu a').forEach(link => {
+            link.addEventListener('click', closeSidebarFunc);
+        });
+    }
+}
+
+// Enhanced mobile alerts with vibration API
+function showMobileAlert(message, type = 'warning') {
+    // Browser notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Expiry Tracker', {
+            body: message,
+            icon: '/icon.png'
+        });
+    }
+    
+    // Vibration if supported
+    if ('vibrate' in navigator) {
+        navigator.vibrate(200);
+    }
+    
+    // Custom in-app notification
+    showToast(message, type);
+}
+
+// Toast notification system
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <div class="toast-content">
+            <i class="fas fa-${getToastIcon(type)}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 100);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+
+function getToastIcon(type) {
+    const icons = {
+        success: 'check-circle',
+        warning: 'exclamation-triangle',
+        error: 'times-circle',
+        info: 'info-circle'
+    };
+    return icons[type] || 'info-circle';
+}
+
+// Add this CSS for toast notifications
+const toastCSS = `
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    z-index: 4000;
+    max-width: 300px;
+}
+
+.toast.show {
+    transform: translateX(0);
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toast.success {
+    border-left: 4px solid var(--success);
+}
+
+.toast.warning {
+    border-left: 4px solid var(--warning);
+}
+
+.toast.error {
+    border-left: 4px solid var(--danger);
+}
+
+.toast.info {
+    border-left: 4px solid var(--primary);
+}
+`;
+
+// Inject toast CSS
+const style = document.createElement('style');
+style.textContent = toastCSS;
+document.head.appendChild(style);
