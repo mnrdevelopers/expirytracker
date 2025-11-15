@@ -886,3 +886,128 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* Push Notification Styles */
+.push-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    z-index: 4000;
+    max-width: 350px;
+    border-left: 4px solid var(--primary);
+}
+
+.push-notification.show {
+    transform: translateX(0);
+}
+
+.push-notification.warning {
+    border-left-color: var(--warning);
+}
+
+.push-notification.error {
+    border-left-color: var(--danger);
+}
+
+.push-notification.success {
+    border-left-color: var(--success);
+}
+
+.notification-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.notification-icon {
+    color: var(--primary);
+    font-size: 1.2rem;
+    margin-top: 2px;
+}
+
+.notification-icon.warning {
+    color: var(--warning);
+}
+
+.notification-icon.error {
+    color: var(--danger);
+}
+
+.notification-icon.success {
+    color: var(--success);
+}
+
+.notification-body {
+    flex: 1;
+}
+
+.notification-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text-primary);
+}
+
+.notification-message {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.notification-close:hover {
+    background: var(--surface-light);
+    color: var(--text-primary);
+}
+
+/* Notification permission prompt */
+.notification-permission {
+    position: fixed;
+    bottom: 100px;
+    left: 20px;
+    right: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    z-index: 3000;
+    text-align: center;
+}
+
+.notification-permission h3 {
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.notification-permission p {
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.notification-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.notification-actions .btn {
+    flex: none;
+    padding: 10px 20px;
+}
