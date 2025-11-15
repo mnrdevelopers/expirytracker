@@ -18,14 +18,22 @@
 </head>
 <body>
     <!-- Header with Hamburger -->
-    <header class="header">
-        <div class="navbar">
-            <a href="dashboard.html" class="logo">ExpiryTracker</a>
+ <header class="header">
+    <div class="navbar">
+        <a href="dashboard.html" class="logo">ExpiryTracker</a>
+        <div class="nav-actions">
+            <!-- Notifications Bell -->
+            <div class="notification-bell" id="notification-bell">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge hidden" id="notification-badge">0</span>
+            </div>
+            <!-- Hamburger Menu -->
             <button class="menu-toggle" id="menu-toggle">
                 <i class="fas fa-bars"></i>
             </button>
         </div>
-    </header>
+    </div>
+</header>
 
     <!-- Sidebar Menu -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
