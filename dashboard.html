@@ -34,6 +34,15 @@
                 <i class="fas fa-times"></i>
             </button>
         </div>
+        
+        <div class="sidebar-user">
+            <div class="user-avatar" id="user-avatar">U</div>
+            <div class="user-info">
+                <h4 id="user-name">User</h4>
+                <p id="user-email">user@example.com</p>
+            </div>
+        </div>
+        
         <ul class="sidebar-menu">
             <li><a href="dashboard.html" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
             <li><a href="documents.html"><i class="fas fa-file-alt"></i> Documents</a></li>
@@ -68,6 +77,18 @@
                 </div>
             </div>
             
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <a href="add.html" class="quick-action-btn">
+                    <i class="fas fa-plus"></i>
+                    Add Document
+                </a>
+                <a href="documents.html" class="quick-action-btn">
+                    <i class="fas fa-list"></i>
+                    View All
+                </a>
+            </div>
+            
             <!-- Recent Alerts -->
             <div class="alerts-section">
                 <h2 class="section-title">
@@ -79,24 +100,6 @@
                         <i class="fas fa-bell-slash"></i>
                         <p>No alerts at the moment</p>
                     </div>
-                </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="alerts-section">
-                <h2 class="section-title">
-                    <i class="fas fa-bolt"></i>
-                    Quick Actions
-                </h2>
-                <div class="form-actions">
-                    <a href="add.html" class="btn">
-                        <i class="fas fa-plus"></i>
-                        Add Document
-                    </a>
-                    <a href="documents.html" class="btn btn-outline">
-                        <i class="fas fa-list"></i>
-                        View All
-                    </a>
                 </div>
             </div>
         </div>
@@ -135,40 +138,6 @@
             loadDashboard();
             setupMobileNavigation();
         });
-
-        function setupMobileNavigation() {
-            const menuToggle = document.getElementById('menu-toggle');
-            const closeSidebar = document.getElementById('close-sidebar');
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-
-            function openSidebar() {
-                sidebar.classList.add('active');
-                overlay.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-
-            function closeSidebarFunc() {
-                sidebar.classList.remove('active');
-                overlay.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-
-            menuToggle.addEventListener('click', openSidebar);
-            closeSidebar.addEventListener('click', closeSidebarFunc);
-            overlay.addEventListener('click', closeSidebarFunc);
-
-            // Close sidebar when clicking on a link
-            document.querySelectorAll('.sidebar-menu a').forEach(link => {
-                link.addEventListener('click', closeSidebarFunc);
-            });
-
-            // Logout functionality
-            document.getElementById('sidebar-logout').addEventListener('click', function(e) {
-                e.preventDefault();
-                handleLogout();
-            });
-        }
     </script>
 </body>
 </html>
