@@ -5,24 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings - Expiry Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-
-     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Header -->
     <header>
         <div class="container">
             <nav class="navbar">
-                <a href="dashboard.html" class="logo">📅 Expiry Tracker</a>
+                <a href="dashboard.html" class="logo">Expiry Tracker</a>
                 <ul class="nav-links">
                     <li><a href="dashboard.html">Dashboard</a></li>
                     <li><a href="documents.html">Documents</a></li>
-                    <li><a href="add-document.html">Add Document</a></li>
+                    <li><a href="add.html">Add Document</a></li>
                     <li><a href="settings.html" class="active">Settings</a></li>
                 </ul>
                 <div class="user-info">
@@ -33,187 +26,44 @@
         </div>
     </header>
 
-    <!-- Main Content -->
-    <div class="container">
-        <div id="settings-page" class="page">
-            <h1 class="page-title">Settings</h1>
-            
-            <div class="form-card">
-                <h2 class="form-title">Notification Preferences</h2>
-                <form id="settings-form">
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="notify-30-days" checked> 
-                            Notify 30 days before expiry
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="notify-7-days" checked> 
-                            Notify 7 days before expiry
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="notify-1-day" checked> 
-                            Notify 1 day before expiry
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="notify-expired" checked> 
-                            Notify when expired
-                        </label>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Save Preferences</button>
-                    </div>
-                </form>
-            </div>
-            
-            <div class="form-card" style="margin-top: 30px;">
-                <h2 class="form-title">Account Information</h2>
+    <main class="container">
+        <h1 class="page-title">Settings</h1>
+        <div class="form-card">
+            <h2 class="form-title">Notification Preferences</h2>
+            <form id="settings-form">
                 <div class="form-group">
-                    <label>Email</label>
-                    <div id="account-email" class="form-control" style="background-color: #f8f9fa;">Loading...</div>
+                    <label>
+                        <input type="checkbox" id="notify-30-days" checked> Notify 30 days before expiry
+                    </label>
                 </div>
                 <div class="form-group">
-                    <label>Account Created</label>
-                    <div id="account-created" class="form-control" style="background-color: #f8f9fa;">Loading...</div>
+                    <label>
+                        <input type="checkbox" id="notify-7-days" checked> Notify 7 days before expiry
+                    </label>
                 </div>
-            </div>
-            
-            <div class="form-card" style="margin-top: 30px; border-left: 4px solid var(--danger);">
-                <h2 class="form-title" style="color: var(--danger);">Danger Zone</h2>
-                <p>Once you delete your account, there is no going back. Please be certain.</p>
-                <button class="btn btn-danger" id="delete-account-btn" style="margin-top: 15px;">Delete Account</button>
-            </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="notify-1-day" checked> Notify 1 day before expiry
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="notify-expired" checked> Notify when expired
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn">Save Preferences</button>
+                </div>
+            </form>
         </div>
-    </div>
-
-    <!-- Loading Indicator -->
-    <div id="loading" class="loading hidden">
-        <div class="spinner"></div>
-    </div>
+    </main>
 
     <script src="firebase-config.js"></script>
-    <script src="script.js"></script>
+    <script src="app.js"></script>
     <script>
-        // Settings page specific functionality
         document.addEventListener('DOMContentLoaded', function() {
-            const logoutBtn = document.getElementById('logout-btn');
-            const settingsForm = document.getElementById('settings-form');
-            const deleteAccountBtn = document.getElementById('delete-account-btn');
-            
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', function() {
-                    firebase.auth().signOut().then(() => {
-                        window.location.href = 'index.html';
-                    });
-                });
-            }
-            
-            // Check auth state
-            firebase.auth().onAuthStateChanged((user) => {
-                if (!user) {
-                    window.location.href = 'index.html';
-                } else {
-                    document.getElementById('user-email').textContent = user.email;
-                    document.getElementById('account-email').textContent = user.email;
-                    
-                    // Format account creation date
-                    if (user.metadata.creationTime) {
-                        const created = new Date(user.metadata.creationTime);
-                        document.getElementById('account-created').textContent = created.toLocaleDateString() + ' at ' + created.toLocaleTimeString();
-                    }
-                    
-                    loadNotificationPreferences();
-                }
-            });
-            
-            function loadNotificationPreferences() {
-                const preferences = JSON.parse(localStorage.getItem('notificationPreferences') || '{}');
-                
-                // Set default preferences if not set
-                if (Object.keys(preferences).length === 0) {
-                    preferences.notify30Days = true;
-                    preferences.notify7Days = true;
-                    preferences.notify1Day = true;
-                    preferences.notifyExpired = true;
-                    localStorage.setItem('notificationPreferences', JSON.stringify(preferences));
-                }
-                
-                document.getElementById('notify-30-days').checked = preferences.notify30Days;
-                document.getElementById('notify-7-days').checked = preferences.notify7Days;
-                document.getElementById('notify-1-day').checked = preferences.notify1Day;
-                document.getElementById('notify-expired').checked = preferences.notifyExpired;
-            }
-            
-            settingsForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                handleSaveSettings();
-            });
-            
-            deleteAccountBtn.addEventListener('click', function() {
-                if (confirm('Are you sure you want to delete your account? This will permanently delete all your data and cannot be undone.')) {
-                    handleDeleteAccount();
-                }
-            });
-            
-            function handleSaveSettings() {
-                const preferences = {
-                    notify30Days: document.getElementById('notify-30-days').checked,
-                    notify7Days: document.getElementById('notify-7-days').checked,
-                    notify1Day: document.getElementById('notify-1-day').checked,
-                    notifyExpired: document.getElementById('notify-expired').checked
-                };
-                
-                localStorage.setItem('notificationPreferences', JSON.stringify(preferences));
-                alert('Notification preferences saved successfully!');
-            }
-            
-            function handleDeleteAccount() {
-                const user = firebase.auth().currentUser;
-                if (!user) return;
-                
-                showLoading();
-                
-                // First, delete all user documents
-                firebase.firestore().collection('documents')
-                    .where('userId', '==', user.uid)
-                    .get()
-                    .then(snapshot => {
-                        const batch = firebase.firestore().batch();
-                        snapshot.forEach(doc => {
-                            batch.delete(doc.ref);
-                        });
-                        return batch.commit();
-                    })
-                    .then(() => {
-                        // Then delete the user account
-                        return user.delete();
-                    })
-                    .then(() => {
-                        hideLoading();
-                        alert('Account deleted successfully.');
-                        window.location.href = 'index.html';
-                    })
-                    .catch(error => {
-                        hideLoading();
-                        console.error('Error deleting account: ', error);
-                        alert('Error deleting account: ' + error.message);
-                    });
-            }
-            
-            function showLoading() {
-                const loading = document.getElementById('loading');
-                if (loading) loading.classList.remove('hidden');
-            }
-            
-            function hideLoading() {
-                const loading = document.getElementById('loading');
-                if (loading) loading.classList.add('hidden');
-            }
+            initApp();
+            loadSettings();
         });
     </script>
 </body>
