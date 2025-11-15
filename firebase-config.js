@@ -19,8 +19,23 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
-const messaging = firebase.messaging()
 
 // Make sure they are globally accessible
 window.auth = auth;
 window.db = db;
+
+// Initialize Messaging only if it's available (in supported environments)
+let messaging = null;
+if (firebase.messaging && typeof firebase.messaging === 'function') {
+    try {
+        messaging = firebase.messaging();
+        
+        // Configure messaging for background notifications
+        messaging.usePublicVapidKey('YOUR_VAPID_KEY_HERE'); // Replace with your VAPID key
+        
+    } catch (error) {
+        console.warn('Firebase Messaging initialization failed:', error);
+    }
+} else {
+    console.warn('Firebase Messaging is not available in this environment');
+}
