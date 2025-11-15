@@ -100,9 +100,11 @@ function initializePageElements() {
     deleteModal = getElement('delete-modal');
     
     // Only get closeModalBtns if modals exist
+    // FIX: Ensure closeModalBtns is always an array, even if empty
     if (editModal || deleteModal) {
         closeModalBtns = document.querySelectorAll('.close-modal');
     } else {
+        // Initialize as an empty NodeList or Array to prevent .length error
         closeModalBtns = [];
     }
     
@@ -160,8 +162,8 @@ function setupEventListeners() {
 }
 
 function setupModalEventListeners() {
-    // Only setup if modals exist on this page
-    if (closeModalBtns.length === 0) return;
+    // FIX: Check if closeModalBtns is truthy AND has a length property (meaning it's a NodeList or Array)
+    if (!closeModalBtns || closeModalBtns.length === 0) return;
     
     // Close modals
     closeModalBtns.forEach(btn => {
@@ -622,6 +624,10 @@ function handleNotificationsSnapshot(snapshot) {
 
 function handleNotificationsError(error) {
     console.error('Error getting notifications: ', error);
+    // Display error to user only if on the notifications page
+    if (window.location.pathname.includes('notifications.html') || window.location.href.includes('notifications.html')) {
+        showToast('Error loading notifications. Check permissions.', 'error');
+    }
 }
 
 function updateUnreadCount() {
@@ -652,19 +658,22 @@ async function checkReminders() {
     
     for (const doc of documents) {
         const daysRemaining = getDaysRemaining(doc.expiryDate);
-        const alertKey = `notification_${doc.id}_${daysRemaining}`;
-        const lastAlertDate = localStorage.getItem(alertKey);
-        const todayStr = today.toDateString();
+        // Use a composite key that includes the day to ensure we only remind once per day per type
+        const alertKey = `notification_${doc.id}_${daysRemaining}_${today.toDateString()}`;
         
-        if (lastAlertDate !== todayStr && shouldCreateNotification(daysRemaining)) {
+        // Check if this specific reminder (for this doc and this daysRemaining value) has already been sent today
+        const lastAlertDate = localStorage.getItem(alertKey);
+        
+        if (!lastAlertDate && shouldCreateNotification(daysRemaining)) {
             await createNotificationForDocument(doc, daysRemaining);
-            localStorage.setItem(alertKey, todayStr);
+            // Set the reminder flag in localStorage only after successful creation
+            localStorage.setItem(alertKey, 'sent');
         }
     }
 }
 
 function shouldCreateNotification(daysRemaining) {
-    return daysRemaining <= 0 || daysRemaining === 1 || daysRemaining <= 7 || daysRemaining === 30;
+    return daysRemaining <= 0 || daysRemaining === 1 || daysRemaining === 7 || daysRemaining === 30;
 }
 
 async function createNotificationForDocument(doc, daysRemaining) {
@@ -678,7 +687,7 @@ async function createNotificationForDocument(doc, daysRemaining) {
         type = 'expiring';
         title = '⚠️ Expires Tomorrow';
         message = `Your document "${doc.name}" expires tomorrow. Don't forget to renew it!`;
-    } else if (daysRemaining <= 7) {
+    } else if (daysRemaining === 7) {
         type = 'expiring';
         title = '🔔 Expiring Soon';
         message = `Your document "${doc.name}" expires in ${daysRemaining} days.`;
