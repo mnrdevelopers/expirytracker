@@ -1212,3 +1212,22 @@ function isFunctionsAvailable() {
     const functionsService = getFunctions();
     return functionsService !== null && typeof functionsService !== 'undefined';
 }
+
+// Service Worker Registration for GitHub Pages
+async function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        try {
+            // Use relative path for GitHub Pages
+            const registration = await navigator.serviceWorker.register('./firebase-messaging-sw.js', {
+                scope: './'
+            });
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            return registration;
+        } catch (error) {
+            console.error('ServiceWorker registration failed: ', error);
+            throw error;
+        }
+    } else {
+        throw new Error('Service workers are not supported in this browser');
+    }
+}
