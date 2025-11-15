@@ -945,17 +945,23 @@ async function initializePushNotifications() {
                 fcmToken = await messaging.getToken();
                 
                 if (fcmToken) {
-                    console.log('FCM Token:', fcmToken);
+                    console.log('FCM Token obtained:', fcmToken);
                     await saveFCMToken(fcmToken);
                     setupMessageHandlers();
+                    
+                    // Show success message
+                    showToast('Push notifications enabled!', 'success');
                 } else {
                     console.log('No registration token available.');
+                    showToast('Could not enable push notifications', 'error');
                 }
             } catch (tokenError) {
                 console.error('Error getting FCM token:', tokenError);
+                showToast('Error enabling push notifications', 'error');
             }
         } else {
-            console.log('Unable to get permission to notify.');
+            console.log('Notification permission denied.');
+            showToast('Please enable notifications for expiry reminders', 'warning');
         }
     } catch (error) {
         console.error('Error initializing push notifications:', error);
@@ -971,7 +977,8 @@ async function saveFCMToken(token) {
             fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             email: currentUser.email,
-            displayName: currentUser.displayName
+            displayName: currentUser.displayName,
+            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
         
         console.log('FCM token saved to Firestore');
@@ -1026,71 +1033,30 @@ function setupMessageHandlers() {
     });
 }
 
-// Show custom notification for foreground messages
-function showCustomNotification(payload) {
-    const notification = document.createElement('div');
-    notification.className = 'push-notification';
-    
-    const title = payload.notification?.title || payload.data?.title || 'Expiry Tracker';
-    const body = payload.notification?.body || payload.data?.body || 'You have a new notification';
-    
-    notification.innerHTML = `
-        <div class="notification-content">
-            <div class="notification-icon">
-                <i class="fas fa-bell"></i>
-            </div>
-            <div class="notification-body">
-                <div class="notification-title">${title}</div>
-                <div class="notification-message">${body}</div>
-            </div>
-            <button class="notification-close">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Show notification
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 100);
-    
-    // Auto hide after 5 seconds
-    setTimeout(() => {
-        hideNotification(notification);
-    }, 5000);
-    
-    // Close button
-    notification.querySelector('.notification-close').addEventListener('click', () => {
-        hideNotification(notification);
-    });
-    
-    // Click to open relevant page
-    notification.addEventListener('click', () => {
-        hideNotification(notification);
-        const page = payload.data?.page || 'dashboard.html';
-        if (!window.location.href.includes(page)) {
-            window.location.href = page;
-        }
-    });
-}
-
-function hideNotification(notification) {
-    notification.classList.remove('show');
-    setTimeout(() => {
-        if (document.body.contains(notification)) {
-            document.body.removeChild(notification);
-        }
-    }, 300);
-}
-
-// Send push notification (for testing and reminders)
+// Real implementation of sendPushNotification using Cloud Functions
 async function sendPushNotification(userId, title, body, data = {}) {
     try {
-        // Check if we can show notifications
+        if (!currentUser || currentUser.uid !== userId) {
+            throw new Error('Unauthorized to send notifications');
+        }
+
+        // Call Cloud Function to send notification
+        const sendNotification = functions.httpsCallable('sendManualNotification');
+        const result = await sendNotification({
+            userId: userId,
+            title: title,
+            body: body,
+            data: data
+        });
+
+        console.log('Push notification sent via Cloud Function:', result);
+        return result;
+
+    } catch (error) {
+        console.error('Error sending push notification via Cloud Function:', error);
+        
+        // Fallback to local notification
         if ('Notification' in window && Notification.permission === 'granted') {
-            // Show local notification
             const notification = new Notification(title, {
                 body: body,
                 icon: '/icon-192.png',
@@ -1108,26 +1074,20 @@ async function sendPushNotification(userId, title, body, data = {}) {
                 notification.close();
             };
             
-            // Auto close after 10 seconds
             setTimeout(() => {
                 notification.close();
             }, 10000);
         }
         
-        // For actual FCM implementation, you would need a Cloud Function
-        // This is a simplified version that works without backend
-        console.log('Push notification would be sent:', { userId, title, body, data });
-        
-    } catch (error) {
-        console.error('Error sending push notification:', error);
+        throw error;
     }
 }
 
-// Enhanced reminder system with push notifications
-function checkReminders() {
+// Enhanced reminder system with real push notifications
+async function checkReminders() {
     const preferences = JSON.parse(localStorage.getItem('notificationPreferences') || '{}');
     
-    documents.forEach(doc => {
+    for (const doc of documents) {
         const daysRemaining = getDaysRemaining(doc.expiryDate);
         
         // Check if we should show a reminder based on user preferences
@@ -1158,28 +1118,78 @@ function checkReminders() {
                 type = 'error';
             }
             
-            if (shouldNotify && message) {
-                // Show in-app toast notification
-                showToast(message, type);
-                
-                // Send push notification
-                if (currentUser) {
-                    sendPushNotification(
+            if (shouldNotify && message && currentUser) {
+                try {
+                    // Send real push notification via Cloud Function
+                    await sendPushNotification(
                         currentUser.uid,
                         'Expiry Tracker Alert',
                         message,
                         { 
                             page: 'documents.html', 
                             docId: doc.id,
-                            type: type
+                            type: type,
+                            docName: doc.name,
+                            docType: doc.type
                         }
                     );
+                    
+                    // Show local toast as well
+                    showToast(message, type);
+                    
+                    console.log(`Notification sent for document: ${doc.name}`);
+                    
+                } catch (error) {
+                    console.error('Failed to send push notification:', error);
+                    // Fallback to local notification only
+                    showToast(message, type);
                 }
                 
                 localStorage.setItem(alertKey, todayStr);
             }
         }
-    });
+    }
+}
+
+// Test notification function (for development)
+async function testPushNotification() {
+    if (!currentUser) return;
+    
+    try {
+        await sendPushNotification(
+            currentUser.uid,
+            'Test Notification',
+            'This is a test push notification from Expiry Tracker',
+            { page: 'dashboard.html', type: 'info', test: true }
+        );
+        showToast('Test notification sent!', 'success');
+    } catch (error) {
+        showToast('Failed to send test notification', 'error');
+    }
+}
+
+// Add test button to settings page (optional)
+function addTestNotificationButton() {
+    const settingsCard = document.querySelector('.form-card');
+    if (settingsCard && currentUser) {
+        const testSection = document.createElement('div');
+        testSection.className = 'form-group';
+        testSection.innerHTML = `
+            <div class="setting-item">
+                <div class="setting-content">
+                    <div class="setting-title">Test Push Notifications</div>
+                    <div class="setting-description">Send a test notification to verify setup</div>
+                </div>
+                <button class="btn btn-outline" id="test-notification-btn">
+                    <i class="fas fa-bell"></i>
+                    Test
+                </button>
+            </div>
+        `;
+        settingsCard.appendChild(testSection);
+        
+        document.getElementById('test-notification-btn').addEventListener('click', testPushNotification);
+    }
 }
 
 // Check if messaging is available
