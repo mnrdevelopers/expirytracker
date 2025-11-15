@@ -922,7 +922,7 @@ async function initializePushNotifications() {
             
             // Get FCM token
             fcmToken = await messaging.getToken({
-                vapidKey: 'YOUR_VAPID_KEY_HERE' // You need to generate this
+                vapidKey: 'BNIPHzoLaLW03Tpb0qrqIMgx5M-aFVOndk9-EtIljjiz2NCJkrLzXHxBgmClb7KdX08BOU5fffhDM08Dzs1G8nE' // You need to generate this
             });
             
             if (fcmToken) {
