@@ -31,7 +31,7 @@ body {
     color: var(--text-primary);
     line-height: 1.6;
     min-height: 100vh;
-    padding-bottom: 80px; /* Space for bottom nav */
+    padding-bottom: 80px;
 }
 
 /* Container */
@@ -143,23 +143,56 @@ body {
     cursor: pointer;
 }
 
+.sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--surface-light);
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 24px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: white;
+}
+
+.user-info h4 {
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.user-info p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
 .sidebar-menu {
     list-style: none;
 }
 
 .sidebar-menu li {
-    margin-bottom: 15px;
+    margin-bottom: 8px;
 }
 
 .sidebar-menu a {
     display: flex;
     align-items: center;
-    padding: 15px 20px;
+    padding: 16px 20px;
     color: var(--text-primary);
     text-decoration: none;
     border-radius: var(--border-radius-sm);
     transition: var(--transition);
     font-weight: 500;
+    gap: 12px;
 }
 
 .sidebar-menu a:hover,
@@ -169,8 +202,9 @@ body {
 }
 
 .sidebar-menu i {
-    margin-right: 12px;
-    font-size: 1.25rem;
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
 }
 
 /* Bottom Navigation */
@@ -199,26 +233,37 @@ body {
     border-radius: var(--border-radius-sm);
     flex: 1;
     max-width: 80px;
+    position: relative;
 }
 
 .nav-item.active {
     color: var(--primary);
-    background: rgba(99, 102, 241, 0.1);
+}
+
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    width: 4px;
+    height: 4px;
+    background: var(--primary);
+    border-radius: 50%;
 }
 
 .nav-icon {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     margin-bottom: 4px;
 }
 
 .nav-label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 500;
 }
 
 /* Main Content */
 .main-content {
     padding: 20px 0;
+    min-height: calc(100vh - 140px);
 }
 
 .page-title {
@@ -501,6 +546,7 @@ body {
     color: var(--text-primary);
     font-family: 'Poppins', sans-serif;
     transition: var(--transition);
+    font-size: 16px; /* Prevent zoom on iOS */
 }
 
 .form-control:focus {
@@ -531,6 +577,7 @@ body {
     text-decoration: none;
     gap: 8px;
     flex: 1;
+    font-size: 16px;
 }
 
 .btn:hover {
@@ -686,6 +733,78 @@ body {
     opacity: 0.5;
 }
 
+/* Quick Actions */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: var(--transition);
+    text-align: center;
+}
+
+.quick-action-btn:hover {
+    background: var(--surface-light);
+    transform: translateY(-2px);
+}
+
+.quick-action-btn i {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    color: var(--primary);
+}
+
+/* Settings Items */
+.settings-list {
+    background: var(--surface);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.setting-item:hover {
+    background: var(--surface-light);
+}
+
+.setting-content {
+    flex: 1;
+}
+
+.setting-title {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.setting-description {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
 /* Utility Classes */
 .hidden {
     display: none !important;
@@ -697,6 +816,48 @@ body {
 
 .mb-4 {
     margin-bottom: 24px;
+}
+
+/* Toast Notifications */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    z-index: 4000;
+    max-width: 300px;
+}
+
+.toast.show {
+    transform: translateX(0);
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toast.success {
+    border-left: 4px solid var(--success);
+}
+
+.toast.warning {
+    border-left: 4px solid var(--warning);
+}
+
+.toast.error {
+    border-left: 4px solid var(--danger);
+}
+
+.toast.info {
+    border-left: 4px solid var(--primary);
 }
 
 /* Responsive */
@@ -720,11 +881,8 @@ body {
     .sidebar {
         width: 280px;
     }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    :root {
-        color-scheme: dark;
+    
+    .quick-actions {
+        grid-template-columns: 1fr;
     }
 }
