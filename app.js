@@ -1196,3 +1196,7 @@ function addTestNotificationButton() {
 function isMessagingAvailable() {
     return messaging !== null && typeof messaging !== 'undefined';
 }
+
+function getFunctions() {
+    return window.firebaseServices?.functions || functions;
+}
