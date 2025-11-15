@@ -285,9 +285,9 @@ function handleLogout() {
         .then(() => {
             showSuccess('Logged out successfully');
             // FIX: Explicitly redirect to the login page immediately after sign out
-            // This prevents the onAuthStateChanged listener from potentially re-authenticating the user
-            // in environments where the auth token persists temporarily after sign-out.
+            // and return to ensure no other listener code runs immediately.
             navigateTo('index.html');
+            return; // Stop execution here
         })
         .catch(error => {
             showError('Error logging out: ' + error.message);
@@ -887,6 +887,8 @@ async function deleteNotification(notificationId) {
 
 // Settings Functions
 function loadSettings() {
+    if (!currentUser) return; // FIX: Prevent attempting to load preferences if user is not authenticated yet.
+    
     loadEmailPreferences();
     setupSettingsForm();
 }
