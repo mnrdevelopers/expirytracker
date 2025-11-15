@@ -27,7 +27,9 @@ function initApp() {
             // User is signed in
             currentUser = user;
             initializePageElements();
-            if (userEmail) userEmail.textContent = user.email;
+            
+            // Update user profile information
+            updateUserProfile(user);
             
             // Redirect to dashboard if on login page
             if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
@@ -244,7 +246,7 @@ function handleAuthSubmit(e) {
     if (isLoginMode) {
         // Login
         auth.signInWithEmailAndPassword(email, password)
-            .then(() => {
+            .then((userCredential) => {
                 hideLoading();
                 // Success handled by auth state change
             })
@@ -263,9 +265,15 @@ function handleAuthSubmit(e) {
             return;
         }
         
+        if (!name) {
+            hideLoading();
+            authError.textContent = 'Please enter your name';
+            return;
+        }
+        
         auth.createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
-                // Save user profile
+                // Save user profile with name
                 return userCredential.user.updateProfile({
                     displayName: name
                 });
@@ -863,3 +871,31 @@ const toastCSS = `
 const style = document.createElement('style');
 style.textContent = toastCSS;
 document.head.appendChild(style);
+
+// Enhanced user profile handling
+function updateUserProfile(user) {
+    if (!user) return;
+    
+    // Update user info in sidebar
+    const userAvatar = document.getElementById('user-avatar');
+    const userName = document.getElementById('user-name');
+    const userEmail = document.getElementById('user-email');
+    const currentEmail = document.getElementById('current-email');
+    
+    if (userAvatar) {
+        const displayName = user.displayName || 'User';
+        userAvatar.textContent = displayName.charAt(0).toUpperCase();
+    }
+    
+    if (userName) {
+        userName.textContent = user.displayName || 'User';
+    }
+    
+    if (userEmail) {
+        userEmail.textContent = user.email;
+    }
+    
+    if (currentEmail) {
+        currentEmail.textContent = user.email;
+    }
+}
