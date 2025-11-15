@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Expiry Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     
     <!-- Firebase SDKs -->
@@ -14,54 +15,114 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <nav class="navbar">
-                <a href="dashboard.html" class="logo">Expiry Tracker</a>
-                <ul class="nav-links">
-                    <li><a href="dashboard.html" class="active">Dashboard</a></li>
-                    <li><a href="documents.html">Documents</a></li>
-                    <li><a href="add.html">Add Document</a></li>
-                    <li><a href="settings.html">Settings</a></li>
-                </ul>
-                <div class="user-info">
-                    <span class="user-email" id="user-email"></span>
-                    <button class="btn btn-outline" id="logout-btn">Logout</button>
-                </div>
-            </nav>
+    <!-- Header with Hamburger -->
+    <header class="header">
+        <div class="navbar">
+            <a href="dashboard.html" class="logo">ExpiryTracker</a>
+            <button class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
         </div>
     </header>
 
-    <main class="container">
-        <h1 class="page-title">Dashboard</h1>
-        
-        <div class="stats-grid">
-            <div class="stat-card total">
-                <div class="stat-label">Total Documents</div>
-                <div class="stat-number" id="total-docs">0</div>
-            </div>
-            <div class="stat-card active">
-                <div class="stat-label">Active</div>
-                <div class="stat-number" id="active-docs">0</div>
-            </div>
-            <div class="stat-card expiring">
-                <div class="stat-label">Expiring Soon</div>
-                <div class="stat-number" id="expiring-docs">0</div>
-            </div>
-            <div class="stat-card expired">
-                <div class="stat-label">Expired</div>
-                <div class="stat-number" id="expired-docs">0</div>
-            </div>
+    <!-- Sidebar Menu -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3 class="sidebar-title">Menu</h3>
+            <button class="close-sidebar" id="close-sidebar">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
-        
-        <div class="alerts-section">
-            <h2>Upcoming Alerts</h2>
-            <div id="alerts-list">
-                <p>No upcoming alerts. All documents are up to date.</p>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="documents.html"><i class="fas fa-file-alt"></i> Documents</a></li>
+            <li><a href="add.html"><i class="fas fa-plus-circle"></i> Add Document</a></li>
+            <li><a href="settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="#" id="sidebar-logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <h1 class="page-title">Dashboard</h1>
+            
+            <!-- Quick Stats -->
+            <div class="stats-grid">
+                <div class="stat-card total">
+                    <div class="stat-label">Total Documents</div>
+                    <div class="stat-number" id="total-docs">0</div>
+                </div>
+                <div class="stat-card active">
+                    <div class="stat-label">Active</div>
+                    <div class="stat-number" id="active-docs">0</div>
+                </div>
+                <div class="stat-card expiring">
+                    <div class="stat-label">Expiring Soon</div>
+                    <div class="stat-number" id="expiring-docs">0</div>
+                </div>
+                <div class="stat-card expired">
+                    <div class="stat-label">Expired</div>
+                    <div class="stat-number" id="expired-docs">0</div>
+                </div>
+            </div>
+            
+            <!-- Recent Alerts -->
+            <div class="alerts-section">
+                <h2 class="section-title">
+                    <i class="fas fa-bell"></i>
+                    Recent Alerts
+                </h2>
+                <div id="alerts-list">
+                    <div class="empty-state">
+                        <i class="fas fa-bell-slash"></i>
+                        <p>No alerts at the moment</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="alerts-section">
+                <h2 class="section-title">
+                    <i class="fas fa-bolt"></i>
+                    Quick Actions
+                </h2>
+                <div class="form-actions">
+                    <a href="add.html" class="btn">
+                        <i class="fas fa-plus"></i>
+                        Add Document
+                    </a>
+                    <a href="documents.html" class="btn btn-outline">
+                        <i class="fas fa-list"></i>
+                        View All
+                    </a>
+                </div>
             </div>
         </div>
     </main>
 
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item active">
+            <i class="fas fa-home nav-icon"></i>
+            <span class="nav-label">Home</span>
+        </a>
+        <a href="documents.html" class="nav-item">
+            <i class="fas fa-file-alt nav-icon"></i>
+            <span class="nav-label">Docs</span>
+        </a>
+        <a href="add.html" class="nav-item">
+            <i class="fas fa-plus nav-icon"></i>
+            <span class="nav-label">Add</span>
+        </a>
+        <a href="settings.html" class="nav-item">
+            <i class="fas fa-cog nav-icon"></i>
+            <span class="nav-label">Settings</span>
+        </a>
+    </nav>
+
+    <!-- Loading -->
     <div id="loading" class="loading hidden">
         <div class="spinner"></div>
     </div>
@@ -72,7 +133,42 @@
         document.addEventListener('DOMContentLoaded', function() {
             initApp();
             loadDashboard();
+            setupMobileNavigation();
         });
+
+        function setupMobileNavigation() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const closeSidebar = document.getElementById('close-sidebar');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+
+            function openSidebar() {
+                sidebar.classList.add('active');
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeSidebarFunc() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            menuToggle.addEventListener('click', openSidebar);
+            closeSidebar.addEventListener('click', closeSidebarFunc);
+            overlay.addEventListener('click', closeSidebarFunc);
+
+            // Close sidebar when clicking on a link
+            document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                link.addEventListener('click', closeSidebarFunc);
+            });
+
+            // Logout functionality
+            document.getElementById('sidebar-logout').addEventListener('click', function(e) {
+                e.preventDefault();
+                handleLogout();
+            });
+        }
     </script>
 </body>
 </html>
