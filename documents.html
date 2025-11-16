@@ -65,10 +65,11 @@
         <div class="container">
             <div class="documents-header">
                 <h1 class="page-title">My Documents</h1>
-                <a href="add.html" class="btn">
+                <!-- Removed Add New button to stop creation -->
+                <!-- <a href="add.html" class="btn">
                     <i class="fas fa-plus"></i>
                     Add New
-                </a>
+                </a> -->
             </div>
             
             <div id="documents-list" class="documents-grid">
@@ -77,75 +78,9 @@
         </div>
     </main>
 
-    <!-- Edit Document Modal -->
-<div id="edit-modal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title">Edit Document</h3>
-            <!-- Added fas fa-times icon and close-modal class for JS hookup -->
-            <button class="close-modal" aria-label="Close modal"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="modal-body">
-            <form id="edit-document-form">
-                <input type="hidden" id="edit-doc-id">
-                <div class="form-group">
-                    <label for="edit-doc-type">Document Type</label>
-                    <select id="edit-doc-type" class="form-control" required>
-                        <option value="">Select document type</option>
-                        <option value="Vehicle RC">Vehicle RC</option>
-                        <option value="Driving License">Driving License</option>
-                        <option value="Passport">Passport</option>
-                        <option value="Insurance">Insurance</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                    <div class="form-group">
-                        <label for="edit-doc-name">Document Name</label>
-                        <input type="text" id="edit-doc-name" class="form-control" placeholder="Enter document name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-doc-number">Document Number</label>
-                        <input type="text" id="edit-doc-number" class="form-control" placeholder="Enter document number" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-issue-date">Issue Date</label>
-                        <input type="date" id="edit-issue-date" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-expiry-date">Expiry Date</label>
-                        <input type="date" id="edit-expiry-date" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-notes">Notes (Optional)</label>
-                        <textarea id="edit-notes" class="form-control" rows="3" placeholder="Add any additional notes"></textarea>
-                    </div>
-               </form>
-        </div>
-        <!-- Ensure buttons are within modal-footer and form-actions for correct styling/logic -->
-        <div class="modal-footer form-actions">
-            <button type="button" class="btn btn-outline" id="cancel-edit">Cancel</button>
-            <button type="button" class="btn" id="save-edit">Save Changes</button>
-        </div>
-    </div>
-</div>
+    <!-- Removed Edit Document Modal -->
 
-   <!-- Delete Confirmation Modal -->
-<div id="delete-modal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title">Confirm Delete</h3>
-            <!-- Added fas fa-times icon and close-modal class for JS hookup -->
-            <button class="close-modal" aria-label="Close modal"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="modal-body">
-            <p>Are you sure you want to delete this document? This action cannot be undone.</p>
-        </div>
-        <div class="modal-footer form-actions">
-            <button type="button" class="btn btn-outline" id="cancel-delete">Cancel</button>
-            <button type="button" class="btn btn-danger" id="confirm-delete">Delete</button>
-        </div>
-    </div>
-</div>
+   <!-- Removed Delete Confirmation Modal -->
 
     <!-- Bottom Navigation -->
     <nav class="bottom-nav">
