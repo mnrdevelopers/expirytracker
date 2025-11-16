@@ -136,7 +136,73 @@ function setupEventListeners() {
 
 function setupAddDocumentForm() {
     if (addDocumentForm) {
-        addEventListener(addDocumentForm, 'submit', handleAddDocument);
+        // Check if we're in edit mode
+        const urlParams = new URLSearchParams(window.location.search);
+        const isEditMode = urlParams.get('edit') === 'true';
+        
+        if (isEditMode) {
+            const editingDoc = sessionStorage.getItem('editingDocument');
+            if (editingDoc) {
+                populateEditForm(JSON.parse(editingDoc));
+            }
+        }
+        
+        addEventListener(addDocumentForm, 'submit', isEditMode ? handleEditDocument : handleAddDocument);
+    }
+}
+
+function populateEditForm(doc) {
+    // Update form title
+    const formTitle = getElement('form-title');
+    if (formTitle) {
+        formTitle.textContent = 'Edit Document';
+    }
+    
+    // Update submit button
+    const submitBtn = addDocumentForm.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Document';
+    }
+    
+    // Populate form fields
+    getElement('doc-type').value = doc.type;
+    getElement('doc-name').value = doc.name;
+    getElement('doc-number').value = doc.number;
+    getElement('issue-date').value = doc.issueDate;
+    getElement('expiry-date').value = doc.expiryDate;
+    getElement('notes').value = doc.notes || '';
+    
+    // Store the document ID for updating
+    addDocumentForm.setAttribute('data-editing-id', doc.id);
+}
+
+async function handleEditDocument(e) {
+    e.preventDefault();
+    showLoading();
+    
+    try {
+        const docId = addDocumentForm.getAttribute('data-editing-id');
+        const docData = collectFormData();
+        
+        // Remove userId and createdAt from update data (these shouldn't change)
+        delete docData.userId;
+        delete docData.createdAt;
+        
+        // Add updatedAt timestamp
+        docData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+        
+        await db.collection('documents').doc(docId).update(docData);
+        
+        showSuccess('Document updated successfully');
+        
+        // Clear the stored editing document
+        sessionStorage.removeItem('editingDocument');
+        
+        navigateTo('documents.html');
+    } catch (error) {
+        showError('Error updating document: ' + error.message);
+    } finally {
+        hideLoading();
     }
 }
 
@@ -432,6 +498,7 @@ function generateAlerts() {
 }
 
 // Documents Page Functions
+// Documents Page Functions
 function loadDocuments() {
     if (documents.length > 0) {
         renderDocuments();
@@ -447,6 +514,111 @@ function renderDocuments() {
     }
     
     documentsList.innerHTML = documents.map(doc => createDocumentCard(doc)).join('');
+    attachDocumentEventListeners();
+}
+
+function attachDocumentEventListeners() {
+    // Edit buttons
+    document.querySelectorAll('.edit-doc').forEach(btn => {
+        addEventListener(btn, 'click', (e) => {
+            const docId = e.currentTarget.getAttribute('data-doc-id');
+            editDocument(docId);
+        });
+    });
+    
+    // Delete buttons
+    document.querySelectorAll('.delete-doc').forEach(btn => {
+        addEventListener(btn, 'click', (e) => {
+            const docId = e.currentTarget.getAttribute('data-doc-id');
+            showDeleteModal(docId);
+        });
+    });
+}
+
+// Edit Document Function
+function editDocument(docId) {
+    const doc = documents.find(d => d.id === docId);
+    if (!doc) {
+        showError('Document not found');
+        return;
+    }
+    
+    // Store the document data in sessionStorage and redirect to add.html with edit mode
+    sessionStorage.setItem('editingDocument', JSON.stringify(doc));
+    window.location.href = 'add.html?edit=true';
+}
+
+// Delete Document Functions
+let documentToDelete = null;
+
+function showDeleteModal(docId) {
+    documentToDelete = docId;
+    const modal = getElement('delete-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function hideDeleteModal() {
+    documentToDelete = null;
+    const modal = getElement('delete-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+async function deleteDocument(docId) {
+    if (!docId) return;
+    
+    showLoading();
+    try {
+        await db.collection('documents').doc(docId).delete();
+        showSuccess('Document deleted successfully');
+        
+        // Remove from local array
+        documents = documents.filter(doc => doc.id !== docId);
+        
+        // Re-render documents
+        renderDocuments();
+        
+    } catch (error) {
+        showError('Error deleting document: ' + error.message);
+    } finally {
+        hideLoading();
+        hideDeleteModal();
+    }
+}
+
+function setupDocumentModals() {
+    const deleteModal = getElement('delete-modal');
+    const closeDeleteModal = getElement('close-delete-modal');
+    const cancelDelete = getElement('cancel-delete');
+    const confirmDelete = getElement('confirm-delete');
+    
+    if (deleteModal) {
+        // Close modal when clicking outside
+        addEventListener(deleteModal, 'click', (e) => {
+            if (e.target === deleteModal) {
+                hideDeleteModal();
+            }
+        });
+    }
+    
+    if (closeDeleteModal) {
+        addEventListener(closeDeleteModal, 'click', hideDeleteModal);
+    }
+    
+    if (cancelDelete) {
+        addEventListener(cancelDelete, 'click', hideDeleteModal);
+    }
+    
+    if (confirmDelete) {
+        addEventListener(confirmDelete, 'click', () => {
+            if (documentToDelete) {
+                deleteDocument(documentToDelete);
+            }
+        });
+    }
 }
 
 function showEmptyState() {
@@ -465,12 +637,21 @@ function createDocumentCard(doc) {
     const daysRemaining = getDaysRemaining(doc.expiryDate);
     
     return `
-        <div class="document-card ${status}">
+        <div class="document-card ${status}" data-doc-id="${doc.id}">
             <div class="document-header">
                 <div class="document-type">${doc.type}</div>
+                <div class="document-actions">
+                    <button class="action-btn edit-doc" data-doc-id="${doc.id}" title="Edit Document">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="action-btn delete-doc" data-doc-id="${doc.id}" title="Delete Document">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </div>
             <div class="document-name">${doc.name}</div>
             <div class="document-number">${doc.number}</div>
+            ${doc.notes ? `<div class="document-notes">${doc.notes}</div>` : ''}
             <div class="document-footer">
                 <div>Expires: ${formatDate(doc.expiryDate)}</div>
                 <div class="days-badge ${status}">${daysRemaining > 0 ? `${daysRemaining} days` : 'Expired'}</div>
