@@ -95,33 +95,33 @@ function initializePageElements() {
     cancelAdd = getElement('cancel-add');
     settingsForm = getElement('settings-form');
     
-    // Modal elements 
+    // Modals - only initialize if they exist on the page
     editModal = getElement('edit-modal');
     deleteModal = getElement('delete-modal');
     
-    // Get all close buttons that exist on the page
-    closeModalBtns = document.querySelectorAll('.close-modal');
-    
-    // Modal action buttons - only initialize if modals exist
-    if (editModal) {
-        cancelEdit = getElement('cancel-edit');
-        saveEdit = getElement('save-edit');
-        
-        // Edit form elements
-        editDocumentForm = getElement('edit-document-form');
-        editDocId = getElement('edit-doc-id');
-        editDocType = getElement('edit-doc-type');
-        editDocName = getElement('edit-doc-name');
-        editDocNumber = getElement('edit-doc-number');
-        editIssueDate = getElement('edit-issue-date');
-        editExpiryDate = getElement('edit-expiry-date');
-        editNotes = getElement('edit-notes');
+    // Only get closeModalBtns if modals exist
+    // FIX: Ensure closeModalBtns is always an array, even if empty
+    if (editModal || deleteModal) {
+        closeModalBtns = document.querySelectorAll('.close-modal');
+    } else {
+        // Initialize as an empty NodeList or Array to prevent .length error
+        closeModalBtns = [];
     }
     
-    if (deleteModal) {
-        cancelDelete = getElement('cancel-delete');
-        confirmDelete = getElement('confirm-delete');
-    }
+    cancelEdit = getElement('cancel-edit');
+    saveEdit = getElement('save-edit');
+    cancelDelete = getElement('cancel-delete');
+    confirmDelete = getElement('confirm-delete');
+    
+    // Edit form elements
+    editDocumentForm = getElement('edit-document-form');
+    editDocId = getElement('edit-doc-id');
+    editDocType = getElement('edit-doc-type');
+    editDocName = getElement('edit-doc-name');
+    editDocNumber = getElement('edit-doc-number');
+    editIssueDate = getElement('edit-issue-date');
+    editExpiryDate = getElement('edit-expiry-date');
+    editNotes = getElement('edit-notes');
     
     // Loading
     loading = getElement('loading');
@@ -167,47 +167,30 @@ function setupEventListeners() {
 }
 
 function setupModalEventListeners() {
-    // Close modals when clicking close buttons
-    if (closeModalBtns && closeModalBtns.length > 0) {
-        closeModalBtns.forEach(btn => {
-            // Use currentTarget to ensure the click listener is bound to the element with the class
-            addEventListener(btn, 'click', closeAllModals);
-        });
-    }
+    // FIX: Check if closeModalBtns is truthy AND has a length property (meaning it's a NodeList or Array)
+    if (!closeModalBtns || closeModalBtns.length === 0) return;
     
-    // NOTE: CRUD button listeners are commented out below as per request
-    // if (cancelEdit) addEventListener(cancelEdit, 'click', closeAllModals);
-    // if (cancelDelete) addEventListener(cancelDelete, 'click', closeAllModals);
-    // if (saveEdit) addEventListener(saveEdit, 'click', handleSaveEdit);
-    // if (confirmDelete) addEventListener(confirmDelete, 'click', handleConfirmDelete);
+    // Close modals
+    closeModalBtns.forEach(btn => {
+        addEventListener(btn, 'click', closeAllModals);
+    });
+    
+    if (cancelEdit) addEventListener(cancelEdit, 'click', closeAllModals);
+    if (cancelDelete) addEventListener(cancelDelete, 'click', closeAllModals);
+    if (saveEdit) addEventListener(saveEdit, 'click', handleSaveEdit);
+    if (confirmDelete) addEventListener(confirmDelete, 'click', handleConfirmDelete);
     
     // Close modals when clicking outside
     addEventListener(window, 'click', (e) => {
-        if (editModal && e.target === editModal) {
-            closeAllModals();
-        }
-        if (deleteModal && e.target === deleteModal) {
-            closeAllModals();
-        }
-    });
-    
-    // Close modals with Escape key
-    addEventListener(document, 'keydown', (e) => {
-        if (e.key === 'Escape') {
+        if ((editModal && e.target === editModal) || (deleteModal && e.target === deleteModal)) {
             closeAllModals();
         }
     });
 }
 
 function setupAddDocumentForm() {
-    // Original listener: addEventListener(addDocumentForm, 'submit', handleAddDocument);
-    // Removed to prevent new document creation.
     if (addDocumentForm) {
-        // Optional: prevent form submission entirely if the form exists on the page
-        addEventListener(addDocumentForm, 'submit', (e) => {
-            e.preventDefault();
-            showError('Document creation is currently disabled.');
-        });
+        addEventListener(addDocumentForm, 'submit', handleAddDocument);
     }
 }
 
@@ -322,7 +305,6 @@ function handleLogout() {
 function setupDocumentsListener() {
     if (!currentUser) return;
     
-    // Set up real-time listener for user's documents (READ operation is kept)
     unsubscribeDocuments = db.collection('documents')
         .where('userId', '==', currentUser.uid)
         .orderBy('expiryDate', 'asc')
@@ -330,15 +312,12 @@ function setupDocumentsListener() {
 }
 
 function handleDocumentsSnapshot(snapshot) {
-    // Map Firestore documents to local array
     documents = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
     }));
     
-    // Trigger UI updates for dashboard and documents page
     updateUI();
-    // Check for expiry reminders
     checkReminders();
 }
 
@@ -465,8 +444,7 @@ function renderDocuments() {
     }
     
     documentsList.innerHTML = documents.map(doc => createDocumentCard(doc)).join('');
-    // No need to attach CRUD event listeners since the buttons are removed
-    // attachDocumentEventListeners();
+    attachDocumentEventListeners();
 }
 
 function showEmptyState() {
@@ -488,10 +466,9 @@ function createDocumentCard(doc) {
         <div class="document-card ${status}">
             <div class="document-header">
                 <div class="document-type">${doc.type}</div>
-                <!-- Removed CRUD buttons from document card -->
                 <div class="document-actions">
-                    <!-- <button class="action-btn edit-doc" data-id="${doc.id}"><i class="fas fa-edit"></i></button> -->
-                    <!-- <button class="action-btn delete-doc" data-id="${doc.id}"><i class="fas fa-trash-alt"></i></button> -->
+                    <button class="action-btn edit-doc" data-id="${doc.id}">✏️</button>
+                    <button class="action-btn delete-doc" data-id="${doc.id}">🗑️</button>
                 </div>
             </div>
             <div class="document-name">${doc.name}</div>
@@ -505,28 +482,22 @@ function createDocumentCard(doc) {
 }
 
 function attachDocumentEventListeners() {
-    // Removed all CRUD event listeners
-    /*
     document.querySelectorAll('.edit-doc').forEach(btn => {
         addEventListener(btn, 'click', (e) => {
-            const docId = e.currentTarget.getAttribute('data-id');
+            const docId = e.target.closest('button').getAttribute('data-id');
             openEditModal(docId);
         });
     });
     
     document.querySelectorAll('.delete-doc').forEach(btn => {
         addEventListener(btn, 'click', (e) => {
-            const docId = e.currentTarget.getAttribute('data-id');
+            const docId = e.target.closest('button').getAttribute('data-id');
             openDeleteModal(docId);
         });
     });
-    */
 }
 
 // Document CRUD Operations
-
-// --- CREATION OPERATIONS REMOVED ---
-/*
 async function handleAddDocument(e) {
     e.preventDefault();
     showLoading();
@@ -573,18 +544,10 @@ async function handleFileUpload(file, docData) {
     docData.fileUrl = url;
     await db.collection('documents').add(docData);
 }
-*/
-// --- END CREATION OPERATIONS REMOVED ---
 
-
-// --- UPDATE OPERATIONS REMOVED ---
-/*
 function openEditModal(docId) {
     const doc = documents.find(d => d.id === docId);
-    if (!doc || !editModal) {
-        console.error('Document not found or edit modal not available');
-        return;
-    }
+    if (!doc) return;
     
     populateEditForm(doc);
     showModal(editModal);
@@ -603,13 +566,6 @@ function populateEditForm(doc) {
 async function handleSaveEdit() {
     showLoading();
     
-    const docId = editDocId.value;
-    if (!docId) {
-        showError('Error: Document ID is missing.');
-        hideLoading();
-        return;
-    }
-
     try {
         const docData = {
             type: editDocType.value,
@@ -621,7 +577,7 @@ async function handleSaveEdit() {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         
-        await db.collection('documents').doc(docId).update(docData);
+        await db.collection('documents').doc(editDocId.value).update(docData);
         showSuccess('Document updated successfully');
         closeAllModals();
     } catch (error) {
@@ -630,38 +586,18 @@ async function handleSaveEdit() {
         hideLoading();
     }
 }
-*/
-// --- END UPDATE OPERATIONS REMOVED ---
 
-
-// --- DELETION OPERATIONS REMOVED ---
-/*
 function openDeleteModal(docId) {
-    if (!deleteModal) {
-        console.error('Delete modal not available');
-        return;
-    }
-    
-    documentToDelete = docId; // Store the ID globally for confirmation
+    documentToDelete = docId;
     showModal(deleteModal);
 }
 
 async function handleConfirmDelete() {
-    if (!documentToDelete) {
-        closeAllModals();
-        return;
-    }
+    if (!documentToDelete) return;
     
     showLoading();
     
     try {
-        // Find the document to check for associated files before deleting the record
-        const docToDelete = documents.find(d => d.id === documentToDelete);
-        
-        if (docToDelete && docToDelete.fileUrl) {
-            // Optional: Implement logic to delete the file from storage if fileUrl exists
-        }
-
         await db.collection('documents').doc(documentToDelete).delete();
         showSuccess('Document deleted successfully');
         closeAllModals();
@@ -672,9 +608,6 @@ async function handleConfirmDelete() {
         hideLoading();
     }
 }
-*/
-// --- END DELETION OPERATIONS REMOVED ---
-
 
 // Notifications System
 function setupNotificationsListener() {
@@ -904,7 +837,6 @@ function attachNotificationEventListeners() {
         });
     });
     
-    // NOTE: Keeping delete notification function but removing document delete
     document.querySelectorAll('.delete-btn').forEach(btn => {
         addEventListener(btn, 'click', (e) => {
             const notificationId = e.target.getAttribute('data-id');
@@ -982,38 +914,13 @@ function navigateTo(url) {
 }
 
 function showModal(modal) {
-    if (modal) {
-        modal.style.display = 'flex';
-        modal.classList.add('active');
-        // Prevent body scrolling when modal is open
-        document.body.style.overflow = 'hidden';
-        
-        // Add a small delay for animation
-        setTimeout(() => {
-            modal.style.opacity = '1';
-        }, 10);
-    }
+    if (modal) modal.style.display = 'flex';
 }
 
 function closeAllModals() {
-    if (editModal) {
-        editModal.style.display = 'none';
-        editModal.classList.remove('active');
-    }
-    if (deleteModal) {
-        deleteModal.style.display = 'none';
-        deleteModal.classList.remove('active');
-    }
+    if (editModal) editModal.style.display = 'none';
+    if (deleteModal) deleteModal.style.display = 'none';
     documentToDelete = null;
-    
-    // Re-enable body scrolling
-    document.body.style.overflow = ''; 
-    
-    // Reset any form validation styles
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
-        form.classList.remove('was-validated');
-    });
 }
 
 function showLoading() {
