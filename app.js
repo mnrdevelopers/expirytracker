@@ -175,13 +175,11 @@ function setupModalEventListeners() {
         });
     }
     
-    // Cancel buttons
-    if (cancelEdit) addEventListener(cancelEdit, 'click', closeAllModals);
-    if (cancelDelete) addEventListener(cancelDelete, 'click', closeAllModals);
-    
-    // Action buttons
-    if (saveEdit) addEventListener(saveEdit, 'click', handleSaveEdit);
-    if (confirmDelete) addEventListener(confirmDelete, 'click', handleConfirmDelete);
+    // NOTE: CRUD button listeners are commented out below as per request
+    // if (cancelEdit) addEventListener(cancelEdit, 'click', closeAllModals);
+    // if (cancelDelete) addEventListener(cancelDelete, 'click', closeAllModals);
+    // if (saveEdit) addEventListener(saveEdit, 'click', handleSaveEdit);
+    // if (confirmDelete) addEventListener(confirmDelete, 'click', handleConfirmDelete);
     
     // Close modals when clicking outside
     addEventListener(window, 'click', (e) => {
@@ -202,8 +200,14 @@ function setupModalEventListeners() {
 }
 
 function setupAddDocumentForm() {
+    // Original listener: addEventListener(addDocumentForm, 'submit', handleAddDocument);
+    // Removed to prevent new document creation.
     if (addDocumentForm) {
-        addEventListener(addDocumentForm, 'submit', handleAddDocument);
+        // Optional: prevent form submission entirely if the form exists on the page
+        addEventListener(addDocumentForm, 'submit', (e) => {
+            e.preventDefault();
+            showError('Document creation is currently disabled.');
+        });
     }
 }
 
@@ -318,7 +322,7 @@ function handleLogout() {
 function setupDocumentsListener() {
     if (!currentUser) return;
     
-    // Set up real-time listener for user's documents
+    // Set up real-time listener for user's documents (READ operation is kept)
     unsubscribeDocuments = db.collection('documents')
         .where('userId', '==', currentUser.uid)
         .orderBy('expiryDate', 'asc')
@@ -461,7 +465,8 @@ function renderDocuments() {
     }
     
     documentsList.innerHTML = documents.map(doc => createDocumentCard(doc)).join('');
-    attachDocumentEventListeners();
+    // No need to attach CRUD event listeners since the buttons are removed
+    // attachDocumentEventListeners();
 }
 
 function showEmptyState() {
@@ -483,9 +488,10 @@ function createDocumentCard(doc) {
         <div class="document-card ${status}">
             <div class="document-header">
                 <div class="document-type">${doc.type}</div>
+                <!-- Removed CRUD buttons from document card -->
                 <div class="document-actions">
-                    <button class="action-btn edit-doc" data-id="${doc.id}"><i class="fas fa-edit"></i></button>
-                    <button class="action-btn delete-doc" data-id="${doc.id}"><i class="fas fa-trash-alt"></i></button>
+                    <!-- <button class="action-btn edit-doc" data-id="${doc.id}"><i class="fas fa-edit"></i></button> -->
+                    <!-- <button class="action-btn delete-doc" data-id="${doc.id}"><i class="fas fa-trash-alt"></i></button> -->
                 </div>
             </div>
             <div class="document-name">${doc.name}</div>
@@ -499,11 +505,10 @@ function createDocumentCard(doc) {
 }
 
 function attachDocumentEventListeners() {
-    // Event delegation is not necessary here since we re-render and attach events
-    // We target the buttons directly using their class names
+    // Removed all CRUD event listeners
+    /*
     document.querySelectorAll('.edit-doc').forEach(btn => {
         addEventListener(btn, 'click', (e) => {
-            // Use currentTarget to ensure the event handler is reliably attached to the button element
             const docId = e.currentTarget.getAttribute('data-id');
             openEditModal(docId);
         });
@@ -515,13 +520,13 @@ function attachDocumentEventListeners() {
             openDeleteModal(docId);
         });
     });
+    */
 }
 
 // Document CRUD Operations
 
-/**
- * Handles adding a new document via the form submission.
- */
+// --- CREATION OPERATIONS REMOVED ---
+/*
 async function handleAddDocument(e) {
     e.preventDefault();
     showLoading();
@@ -531,10 +536,8 @@ async function handleAddDocument(e) {
         const file = getElement('file-upload')?.files[0];
         
         if (file) {
-            // Handle file upload and add document with URL
             await handleFileUpload(file, docData);
         } else {
-            // Add document without file
             await db.collection('documents').add(docData);
         }
         
@@ -547,9 +550,6 @@ async function handleAddDocument(e) {
     }
 }
 
-/**
- * Collects form data from the Add Document form fields.
- */
 function collectFormData() {
     return {
         type: getElement('doc-type').value,
@@ -563,9 +563,6 @@ function collectFormData() {
     };
 }
 
-/**
- * Uploads file to Firebase Storage and adds document record to Firestore with the file URL.
- */
 async function handleFileUpload(file, docData) {
     const storageRef = firebase.storage().ref();
     const fileRef = storageRef.child(`documents/${currentUser.uid}/${Date.now()}_${file.name}`);
@@ -576,11 +573,12 @@ async function handleFileUpload(file, docData) {
     docData.fileUrl = url;
     await db.collection('documents').add(docData);
 }
+*/
+// --- END CREATION OPERATIONS REMOVED ---
 
-/**
- * Opens the edit modal and populates it with the selected document's data.
- * @param {string} docId - The ID of the document to edit.
- */
+
+// --- UPDATE OPERATIONS REMOVED ---
+/*
 function openEditModal(docId) {
     const doc = documents.find(d => d.id === docId);
     if (!doc || !editModal) {
@@ -592,24 +590,16 @@ function openEditModal(docId) {
     showModal(editModal);
 }
 
-/**
- * Populates the Edit Document form fields.
- * @param {Object} doc - The document object.
- */
 function populateEditForm(doc) {
     editDocId.value = doc.id;
     editDocType.value = doc.type;
     editDocName.value = doc.name;
     editDocNumber.value = doc.number;
-    // Firestore dates are stored as YYYY-MM-DD, which works directly with input type="date"
     editIssueDate.value = doc.issueDate;
     editExpiryDate.value = doc.expiryDate;
     editNotes.value = doc.notes || '';
 }
 
-/**
- * Handles saving the changes from the Edit Document modal.
- */
 async function handleSaveEdit() {
     showLoading();
     
@@ -640,11 +630,12 @@ async function handleSaveEdit() {
         hideLoading();
     }
 }
+*/
+// --- END UPDATE OPERATIONS REMOVED ---
 
-/**
- * Opens the delete confirmation modal.
- * @param {string} docId - The ID of the document to delete.
- */
+
+// --- DELETION OPERATIONS REMOVED ---
+/*
 function openDeleteModal(docId) {
     if (!deleteModal) {
         console.error('Delete modal not available');
@@ -655,9 +646,6 @@ function openDeleteModal(docId) {
     showModal(deleteModal);
 }
 
-/**
- * Handles the confirmation and execution of document deletion.
- */
 async function handleConfirmDelete() {
     if (!documentToDelete) {
         closeAllModals();
@@ -672,13 +660,6 @@ async function handleConfirmDelete() {
         
         if (docToDelete && docToDelete.fileUrl) {
             // Optional: Implement logic to delete the file from storage if fileUrl exists
-            // For now, we only delete the Firestore record. Add file deletion logic here if needed.
-            /*
-            const fileRef = storage.refFromURL(docToDelete.fileUrl);
-            await fileRef.delete().catch(err => {
-                console.warn("Could not delete associated file from storage:", err);
-            });
-            */
         }
 
         await db.collection('documents').doc(documentToDelete).delete();
@@ -691,6 +672,9 @@ async function handleConfirmDelete() {
         hideLoading();
     }
 }
+*/
+// --- END DELETION OPERATIONS REMOVED ---
+
 
 // Notifications System
 function setupNotificationsListener() {
@@ -920,6 +904,7 @@ function attachNotificationEventListeners() {
         });
     });
     
+    // NOTE: Keeping delete notification function but removing document delete
     document.querySelectorAll('.delete-btn').forEach(btn => {
         addEventListener(btn, 'click', (e) => {
             const notificationId = e.target.getAttribute('data-id');
