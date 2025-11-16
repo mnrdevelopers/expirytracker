@@ -1411,3 +1411,87 @@ body {
         width: 100%;
     }
 }
+
+/* Edit Modal Specific Styles */
+.modal-body .form-group {
+    margin-bottom: 16px;
+}
+
+.modal-body .form-label {
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--text-secondary);
+}
+
+.modal-body .form-control {
+    background: var(--surface-light);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    padding: 12px;
+    color: var(--text-primary);
+    font-family: 'Poppins', sans-serif;
+    width: 100%;
+    transition: var(--transition);
+}
+
+.modal-body .form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.modal-body textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Error and Success Messages in Modals */
+.modal-body .error-message,
+.modal-body .success-message {
+    margin: 16px 0;
+    padding: 12px;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.9rem;
+}
+
+.modal-body .error-message {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+}
+
+.modal-body .success-message {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid var(--success);
+    color: var(--success);
+}
+
+/* Modal Footer Buttons */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.modal-footer .btn {
+    flex: none;
+}
+
+/* Responsive Modal */
+@media (max-width: 480px) {
+    .modal-content {
+        margin: 20px;
+        padding: 20px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+    }
+}
