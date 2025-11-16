@@ -171,13 +171,12 @@ function setupModalEventListeners() {
     // Close modals when clicking close buttons
     if (closeModalBtns && closeModalBtns.length > 0) {
         closeModalBtns.forEach(btn => {
-            // Updated event listener logic to use the button itself as the target
+            // Use currentTarget to ensure the click listener is bound to the element with the class
             addEventListener(btn, 'click', closeAllModals);
         });
     }
     
     // Cancel buttons
-    // The closest() method ensures we get the button element regardless of where the click occurs inside it (icon/text)
     if (cancelEdit) addEventListener(cancelEdit, 'click', closeAllModals);
     if (cancelDelete) addEventListener(cancelDelete, 'click', closeAllModals);
     
