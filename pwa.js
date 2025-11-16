@@ -4,6 +4,7 @@ class PWAHelper {
         this.deferredPrompt = null;
         this.isIOS = this.detectIOS();
         this.isStandalone = this.detectStandalone();
+        this.basePath = '/expirytracker/';
         this.init();
     }
 
@@ -12,9 +13,10 @@ class PWAHelper {
         this.setupInstallPrompt();
         this.setupMetaTags();
         this.setupThemeColor();
+        this.setupConnectionMonitoring();
+        this.showSplashScreen();
     }
 
-    // Detect iOS devices
     detectIOS() {
         return [
             'iPad Simulator',
@@ -23,23 +25,21 @@ class PWAHelper {
             'iPad',
             'iPhone',
             'iPod'
-        ].includes(navigator.platform) || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+        ].includes(navigator.platform) || 
+        (navigator.userAgent.includes("Mac") && "ontouchend" in document);
     }
 
-    // Detect if app is running in standalone mode
     detectStandalone() {
         return window.matchMedia('(display-mode: standalone)').matches || 
                window.navigator.standalone === true;
     }
 
-    // Register Service Worker
     async registerServiceWorker() {
         if ('serviceWorker' in navigator) {
             try {
-                const registration = await navigator.serviceWorker.register('/sw.js');
+                const registration = await navigator.serviceWorker.register(this.basePath + 'sw.js');
                 console.log('SW registered: ', registration);
 
-                // Check for updates
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
                     console.log('SW update found!');
@@ -57,7 +57,6 @@ class PWAHelper {
         }
     }
 
-    // Handle install prompt
     setupInstallPrompt() {
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
@@ -69,22 +68,19 @@ class PWAHelper {
             console.log('PWA was installed');
             this.deferredPrompt = null;
             this.hideInstallPromotion();
+            this.showToast('App installed successfully!', 'success');
         });
     }
 
-    // Show install promotion
     showInstallPromotion() {
-        // Only show if not already installed and not on iOS (which has different install flow)
         if (!this.isStandalone && !this.isIOS) {
-            this.createInstallButton();
+            setTimeout(() => this.createInstallButton(), 3000);
         } else if (this.isIOS && !this.isStandalone) {
-            this.showIOSInstallInstructions();
+            setTimeout(() => this.showIOSInstallInstructions(), 3000);
         }
     }
 
-    // Create install button for Android/Desktop
     createInstallButton() {
-        // Check if button already exists
         if (document.getElementById('pwa-install-btn')) return;
 
         const installBtn = document.createElement('button');
@@ -96,18 +92,15 @@ class PWAHelper {
         `;
         
         installBtn.addEventListener('click', () => this.installApp());
+        installBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.installApp();
+        });
         
         document.body.appendChild(installBtn);
-        
-        // Auto-hide after 10 seconds
-        setTimeout(() => {
-            this.hideInstallPromotion();
-        }, 10000);
     }
 
-    // Show iOS install instructions
     showIOSInstallInstructions() {
-        // Check if instructions already exist
         if (document.getElementById('ios-install-help')) return;
 
         const iosHelp = document.createElement('div');
@@ -116,7 +109,12 @@ class PWAHelper {
         iosHelp.innerHTML = `
             <div class="ios-install-content">
                 <h3>Install Expiry Tracker</h3>
-                <p>Tap <i class="fas fa-share"></i> then "Add to Home Screen"</p>
+                <p>For the best experience, install this app:</p>
+                <ol style="text-align: left; margin: 15px 0;">
+                    <li>Tap the <i class="fas fa-share"></i> Share button</li>
+                    <li>Scroll down and tap "Add to Home Screen"</li>
+                    <li>Tap "Add" to install</li>
+                </ol>
                 <button class="btn" id="close-ios-help">Got it</button>
             </div>
         `;
@@ -128,15 +126,17 @@ class PWAHelper {
         });
     }
 
-    // Hide install promotion
     hideInstallPromotion() {
         const installBtn = document.getElementById('pwa-install-btn');
         if (installBtn) {
             installBtn.remove();
         }
+        const iosHelp = document.getElementById('ios-install-help');
+        if (iosHelp) {
+            iosHelp.remove();
+        }
     }
 
-    // Trigger app installation
     async installApp() {
         if (this.deferredPrompt) {
             this.deferredPrompt.prompt();
@@ -144,6 +144,7 @@ class PWAHelper {
             
             if (outcome === 'accepted') {
                 console.log('User accepted the install prompt');
+                this.showToast('Installing app...', 'success');
             } else {
                 console.log('User dismissed the install prompt');
             }
@@ -153,23 +154,22 @@ class PWAHelper {
         }
     }
 
-    // Setup meta tags for PWA
     setupMetaTags() {
-        // Viewport meta tag (should already be in HTML)
-        if (!document.querySelector('meta[name="viewport"]')) {
-            const viewport = document.createElement('meta');
-            viewport.name = 'viewport';
-            viewport.content = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
-            document.head.appendChild(viewport);
+        // Add manifest link
+        if (!document.querySelector('link[rel="manifest"]')) {
+            const manifestLink = document.createElement('link');
+            manifestLink.rel = 'manifest';
+            manifestLink.href = this.basePath + 'manifest.json';
+            document.head.appendChild(manifestLink);
         }
 
-        // Theme color meta tag
+        // Theme color
         const themeColor = document.createElement('meta');
         themeColor.name = 'theme-color';
         themeColor.content = '#6366f1';
         document.head.appendChild(themeColor);
 
-        // Apple specific meta tags
+        // iOS specific
         if (this.isIOS) {
             const appleMobileWebAppCapable = document.createElement('meta');
             appleMobileWebAppCapable.name = 'apple-mobile-web-app-capable';
@@ -183,20 +183,17 @@ class PWAHelper {
 
             const appleTouchIcon = document.createElement('link');
             appleTouchIcon.rel = 'apple-touch-icon';
-            appleTouchIcon.href = '/icons/icon-192x192.png';
+            appleTouchIcon.href = this.basePath + 'icons/icon-192x192.png';
             document.head.appendChild(appleTouchIcon);
 
-            // Splash screens (simplified - in production you'd want all sizes)
-            const splashScreen = document.createElement('link');
-            splashScreen.rel = 'apple-touch-startup-image';
-            splashScreen.href = '/splash.png';
-            document.head.appendChild(splashScreen);
+            const appleTouchStartupImage = document.createElement('link');
+            appleTouchStartupImage.rel = 'apple-touch-startup-image';
+            appleTouchStartupImage.href = this.basePath + 'icons/splash.png';
+            document.head.appendChild(appleTouchStartupImage);
         }
     }
 
-    // Update theme color dynamically
     setupThemeColor() {
-        // Update theme color meta tag when theme changes
         const observer = new MutationObserver(() => {
             const themeColorMeta = document.querySelector('meta[name="theme-color"]');
             if (themeColorMeta) {
@@ -210,14 +207,13 @@ class PWAHelper {
         });
     }
 
-    // Show update notification
     showUpdateNotification() {
         const updateNotification = document.createElement('div');
         updateNotification.className = 'pwa-update-notification';
         updateNotification.innerHTML = `
             <div class="pwa-update-content">
                 <p>New version available!</p>
-                <button class="btn" id="pwa-update-btn">Update</button>
+                <button class="btn" id="pwa-update-btn">Update Now</button>
             </div>
         `;
 
@@ -228,12 +224,7 @@ class PWAHelper {
         });
     }
 
-    // Check connection status
     setupConnectionMonitoring() {
-        if ('connection' in navigator) {
-            navigator.connection.addEventListener('change', this.updateConnectionStatus);
-        }
-
         window.addEventListener('online', () => {
             this.showToast('Back online', 'success');
         });
@@ -243,7 +234,27 @@ class PWAHelper {
         });
     }
 
-    // Show toast notification
+    showSplashScreen() {
+        // Only show splash screen on first load in standalone mode
+        if (this.isStandalone && !sessionStorage.getItem('splashShown')) {
+            const splash = document.createElement('div');
+            splash.className = 'app-splash';
+            splash.innerHTML = `
+                <div class="logo">ExpiryTracker</div>
+                <div class="spinner"></div>
+            `;
+            
+            document.body.appendChild(splash);
+            
+            sessionStorage.setItem('splashShown', 'true');
+            
+            setTimeout(() => {
+                splash.style.opacity = '0';
+                setTimeout(() => splash.remove(), 300);
+            }, 2000);
+        }
+    }
+
     showToast(message, type = 'info') {
         const toast = document.createElement('div');
         toast.className = `pwa-toast ${type}`;
@@ -259,8 +270,11 @@ class PWAHelper {
     }
 }
 
-// Initialize PWA
-const pwa = new PWAHelper();
-
-// Export for global access
-window.PWAHelper = pwa;
+// Initialize PWA when DOM is loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        window.pwa = new PWAHelper();
+    });
+} else {
+    window.pwa = new PWAHelper();
+}
