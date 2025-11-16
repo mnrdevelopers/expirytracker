@@ -82,7 +82,8 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3 class="modal-title">Edit Document</h3>
-            <button class="close-modal" aria-label="Close modal">&times;</button>
+            <!-- Added close-modal class to hook into JS logic -->
+            <button class="close-modal" aria-label="Close modal"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body">
             <form id="edit-document-form">
@@ -120,7 +121,8 @@
                     </div>
                </form>
         </div>
-        <div class="modal-footer">
+        <!-- Added modal-footer for Edit Modal buttons -->
+        <div class="modal-footer form-actions">
             <button type="button" class="btn btn-outline" id="cancel-edit">Cancel</button>
             <button type="button" class="btn" id="save-edit">Save Changes</button>
         </div>
@@ -132,12 +134,13 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3 class="modal-title">Confirm Delete</h3>
-            <button class="close-modal" aria-label="Close modal">&times;</button>
+            <!-- Added close-modal class to hook into JS logic -->
+            <button class="close-modal" aria-label="Close modal"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body">
             <p>Are you sure you want to delete this document? This action cannot be undone.</p>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer form-actions">
             <button type="button" class="btn btn-outline" id="cancel-delete">Cancel</button>
             <button type="button" class="btn btn-danger" id="confirm-delete">Delete</button>
         </div>
