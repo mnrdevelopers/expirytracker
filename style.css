@@ -1298,7 +1298,7 @@ body {
 
 /* Document Header Styles */
 .documents-header {
-    display: flex;
+    display: grid;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
