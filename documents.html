@@ -76,6 +76,62 @@
         </div>
     </main>
 
+    <!-- Edit Document Modal -->
+    <div id="edit-document-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Document</h3>
+                <button class="close-modal" id="close-edit-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="edit-document-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="edit-doc-type">Document Type</label>
+                        <select id="edit-doc-type" class="form-control" required>
+                            <option value="">Select document type</option>
+                            <option value="Vehicle RC">Vehicle RC</option>
+                            <option value="Driving License">Driving License</option>
+                            <option value="Passport">Passport</option>
+                            <option value="Insurance">Insurance</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-doc-name">Document Name</label>
+                        <input type="text" id="edit-doc-name" class="form-control" placeholder="Enter document name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-doc-number">Document Number</label>
+                        <input type="text" id="edit-doc-number" class="form-control" placeholder="Enter document number" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-issue-date">Issue Date</label>
+                        <input type="date" id="edit-issue-date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-expiry-date">Expiry Date</label>
+                        <input type="date" id="edit-expiry-date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-notes">Notes (Optional)</label>
+                        <textarea id="edit-notes" class="form-control" rows="3" placeholder="Add any additional notes"></textarea>
+                    </div>
+                    <div id="edit-error" class="error-message" style="display: none;"></div>
+                    <div id="edit-success" class="success-message" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" id="cancel-edit">Cancel</button>
+                    <button type="submit" class="btn">
+                        <i class="fas fa-save"></i>
+                        Update Document
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Delete Confirmation Modal -->
     <div id="delete-modal" class="modal">
         <div class="modal-content">
