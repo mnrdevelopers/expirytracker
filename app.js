@@ -4,7 +4,6 @@ let documents = [];
 let notifications = [];
 let unsubscribeDocuments = null;
 let unsubscribeNotifications = null;
-let documentToDelete = null;
 
 // DOM Elements
 let authForm, authTitle, authSubmit, authSwitchLink, forgotPasswordLink;
@@ -13,8 +12,6 @@ let userEmail, logoutBtn, sidebarLogout;
 let totalDocs, activeDocs, expiringDocs, expiredDocs, alertsList;
 let documentsList, addDocumentBtn;
 let addDocumentForm, cancelAdd;
-let editModal, deleteModal, closeModalBtns, cancelEdit, saveEdit, cancelDelete, confirmDelete;
-let editDocumentForm, editDocId, editDocType, editDocName, editDocNumber, editIssueDate, editExpiryDate, editNotes;
 let settingsForm;
 let loading;
 
@@ -23,10 +20,8 @@ let isLoginMode = true;
 
 // Initialize the app
 function initApp() {
-    console.log('Initializing app...');
     auth.onAuthStateChanged(async (user) => {
         if (user) {
-            console.log('User logged in:', user.uid);
             currentUser = user;
             initializePageElements();
             updateUserProfile(user);
@@ -38,7 +33,6 @@ function initApp() {
                 window.location.href = 'dashboard.html';
             }
         } else {
-            console.log('No user logged in');
             currentUser = null;
             cleanupListeners();
             
@@ -78,8 +72,6 @@ function initializeAuthElements() {
 }
 
 function initializePageElements() {
-    console.log('Initializing page elements...');
-    
     userEmail = getElement('user-email');
     logoutBtn = getElement('logout-btn');
     sidebarLogout = getElement('sidebar-logout');
@@ -100,47 +92,6 @@ function initializePageElements() {
     cancelAdd = getElement('cancel-add');
     settingsForm = getElement('settings-form');
     
-    // Modal elements - Initialize if they exist on the page
-    editModal = getElement('edit-modal');
-    deleteModal = getElement('delete-modal');
-    
-    console.log('Edit modal found:', !!editModal);
-    console.log('Delete modal found:', !!deleteModal);
-    
-    // Get all close buttons that exist on the page
-    closeModalBtns = document.querySelectorAll('.close-modal');
-    console.log('Close buttons found:', closeModalBtns.length);
-    
-    // Modal action buttons - only initialize if modals exist
-    if (editModal) {
-        cancelEdit = getElement('cancel-edit');
-        saveEdit = getElement('save-edit');
-        editDocumentForm = getElement('edit-document-form');
-        editDocId = getElement('edit-doc-id');
-        editDocType = getElement('edit-doc-type');
-        editDocName = getElement('edit-doc-name');
-        editDocNumber = getElement('edit-doc-number');
-        editIssueDate = getElement('edit-issue-date');
-        editExpiryDate = getElement('edit-expiry-date');
-        editNotes = getElement('edit-notes');
-        
-        console.log('Edit form elements initialized:', {
-            cancelEdit: !!cancelEdit,
-            saveEdit: !!saveEdit,
-            editDocId: !!editDocId
-        });
-    }
-    
-    if (deleteModal) {
-        cancelDelete = getElement('cancel-delete');
-        confirmDelete = getElement('confirm-delete');
-        
-        console.log('Delete modal elements initialized:', {
-            cancelDelete: !!cancelDelete,
-            confirmDelete: !!confirmDelete
-        });
-    }
-    
     // Loading
     loading = getElement('loading');
 }
@@ -153,8 +104,6 @@ function setupAuthEventListeners() {
 }
 
 function setupEventListeners() {
-    console.log('Setting up event listeners...');
-    
     // Enhanced logout button handling
     const logoutButtons = [
         'logout-btn',
@@ -176,7 +125,6 @@ function setupEventListeners() {
         addEventListener(cancelAdd, 'click', () => navigateTo('documents.html'));
     }
     
-    setupModalEventListeners();
     setupMobileNavigation();
     
     // Notification bell
@@ -184,64 +132,6 @@ function setupEventListeners() {
     if (notificationBell) {
         addEventListener(notificationBell, 'click', () => navigateTo('notifications.html'));
     }
-}
-
-function setupModalEventListeners() {
-    console.log('Setting up modal event listeners...');
-    
-    // Close modals when clicking close buttons
-    if (closeModalBtns && closeModalBtns.length > 0) {
-        closeModalBtns.forEach(btn => {
-            addEventListener(btn, 'click', closeAllModals);
-        });
-    }
-    
-    // Cancel buttons
-    if (cancelEdit) {
-        console.log('Cancel edit button found, adding listener');
-        addEventListener(cancelEdit, 'click', closeAllModals);
-    } else {
-        console.log('Cancel edit button NOT found');
-    }
-    
-    if (cancelDelete) {
-        console.log('Cancel delete button found, adding listener');
-        addEventListener(cancelDelete, 'click', closeAllModals);
-    } else {
-        console.log('Cancel delete button NOT found');
-    }
-    
-    // Action buttons
-    if (saveEdit) {
-        console.log('Save edit button found, adding listener');
-        addEventListener(saveEdit, 'click', handleSaveEdit);
-    } else {
-        console.log('Save edit button NOT found');
-    }
-    
-    if (confirmDelete) {
-        console.log('Confirm delete button found, adding listener');
-        addEventListener(confirmDelete, 'click', handleConfirmDelete);
-    } else {
-        console.log('Confirm delete button NOT found');
-    }
-    
-    // Close modals when clicking outside
-    addEventListener(window, 'click', (e) => {
-        if (editModal && e.target === editModal) {
-            closeAllModals();
-        }
-        if (deleteModal && e.target === deleteModal) {
-            closeAllModals();
-        }
-    });
-    
-    // Close modals with Escape key
-    addEventListener(document, 'keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeAllModals();
-        }
-    });
 }
 
 function setupAddDocumentForm() {
@@ -418,7 +308,6 @@ async function handleSavePreferences() {
 function setupDocumentsListener() {
     if (!currentUser) return;
     
-    console.log('Setting up documents listener...');
     unsubscribeDocuments = db.collection('documents')
         .where('userId', '==', currentUser.uid)
         .orderBy('expiryDate', 'asc')
@@ -426,7 +315,6 @@ function setupDocumentsListener() {
 }
 
 function handleDocumentsSnapshot(snapshot) {
-    console.log('Documents snapshot received:', snapshot.size, 'documents');
     documents = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -545,19 +433,13 @@ function generateAlerts() {
 
 // Documents Page Functions
 function loadDocuments() {
-    console.log('Loading documents, count:', documents.length);
     if (documents.length > 0) {
         renderDocuments();
     }
 }
 
 function renderDocuments() {
-    if (!documentsList) {
-        console.error('Documents list element not found!');
-        return;
-    }
-    
-    console.log('Rendering', documents.length, 'documents');
+    if (!documentsList) return;
     
     if (documents.length === 0) {
         showEmptyState();
@@ -565,7 +447,6 @@ function renderDocuments() {
     }
     
     documentsList.innerHTML = documents.map(doc => createDocumentCard(doc)).join('');
-    attachDocumentEventListeners();
 }
 
 function showEmptyState() {
@@ -584,17 +465,9 @@ function createDocumentCard(doc) {
     const daysRemaining = getDaysRemaining(doc.expiryDate);
     
     return `
-        <div class="document-card ${status}" data-doc-id="${doc.id}">
+        <div class="document-card ${status}">
             <div class="document-header">
                 <div class="document-type">${doc.type}</div>
-                <div class="document-actions">
-                    <button class="action-btn edit-doc" data-id="${doc.id}" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="action-btn delete-doc" data-id="${doc.id}" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
             </div>
             <div class="document-name">${doc.name}</div>
             <div class="document-number">${doc.number}</div>
@@ -606,53 +479,7 @@ function createDocumentCard(doc) {
     `;
 }
 
-function attachDocumentEventListeners() {
-    console.log('Attaching document event listeners...');
-    
-    // Edit buttons
-    const editButtons = document.querySelectorAll('.edit-doc');
-    console.log(`Found ${editButtons.length} edit buttons`);
-    
-    editButtons.forEach(btn => {
-        // Remove any existing listeners first
-        btn.replaceWith(btn.cloneNode(true));
-    });
-    
-    // Re-select after cloning
-    const freshEditButtons = document.querySelectorAll('.edit-doc');
-    freshEditButtons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const docId = this.getAttribute('data-id');
-            console.log('Edit button clicked for document:', docId);
-            openEditModal(docId);
-        });
-    });
-    
-    // Delete buttons
-    const deleteButtons = document.querySelectorAll('.delete-doc');
-    console.log(`Found ${deleteButtons.length} delete buttons`);
-    
-    deleteButtons.forEach(btn => {
-        // Remove any existing listeners first
-        btn.replaceWith(btn.cloneNode(true));
-    });
-    
-    // Re-select after cloning
-    const freshDeleteButtons = document.querySelectorAll('.delete-doc');
-    freshDeleteButtons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const docId = this.getAttribute('data-id');
-            console.log('Delete button clicked for document:', docId);
-            openDeleteModal(docId);
-        });
-    });
-}
-
-// Document CRUD Operations
+// Document CRUD Operations - Only Add functionality remains
 async function handleAddDocument(e) {
     e.preventDefault();
     showLoading();
@@ -698,113 +525,6 @@ async function handleFileUpload(file, docData) {
     
     docData.fileUrl = url;
     await db.collection('documents').add(docData);
-}
-
-function openEditModal(docId) {
-    console.log('Opening edit modal for document:', docId);
-    
-    if (!editModal) {
-        console.error('Edit modal not found on this page');
-        showError('Edit functionality not available on this page');
-        return;
-    }
-    
-    const doc = documents.find(d => d.id === docId);
-    if (!doc) {
-        console.error('Document not found:', docId);
-        showError('Document not found');
-        return;
-    }
-    
-    populateEditForm(doc);
-    showModal(editModal);
-}
-
-function populateEditForm(doc) {
-    if (!editDocId) {
-        console.error('Edit form elements not initialized');
-        return;
-    }
-    
-    editDocId.value = doc.id;
-    editDocType.value = doc.type;
-    editDocName.value = doc.name;
-    editDocNumber.value = doc.number;
-    editIssueDate.value = doc.issueDate;
-    editExpiryDate.value = doc.expiryDate;
-    editNotes.value = doc.notes || '';
-    
-    console.log('Edit form populated with document:', doc.name);
-}
-
-async function handleSaveEdit() {
-    console.log('Saving edit...');
-    
-    if (!editDocId || !editDocId.value) {
-        showError('No document selected for editing');
-        return;
-    }
-    
-    showLoading();
-    
-    try {
-        const docData = {
-            type: editDocType.value,
-            name: editDocName.value,
-            number: editDocNumber.value,
-            issueDate: editIssueDate.value,
-            expiryDate: editExpiryDate.value,
-            notes: editNotes.value,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        
-        console.log('Updating document:', editDocId.value, docData);
-        await db.collection('documents').doc(editDocId.value).update(docData);
-        showSuccess('Document updated successfully');
-        closeAllModals();
-    } catch (error) {
-        console.error('Error updating document:', error);
-        showError('Error updating document: ' + error.message);
-    } finally {
-        hideLoading();
-    }
-}
-
-function openDeleteModal(docId) {
-    console.log('Opening delete modal for document:', docId);
-    
-    if (!deleteModal) {
-        console.error('Delete modal not found on this page');
-        showError('Delete functionality not available on this page');
-        return;
-    }
-    
-    documentToDelete = docId;
-    showModal(deleteModal);
-}
-
-async function handleConfirmDelete() {
-    console.log('Confirming delete for document:', documentToDelete);
-    
-    if (!documentToDelete) {
-        showError('No document selected for deletion');
-        return;
-    }
-    
-    showLoading();
-    
-    try {
-        console.log('Deleting document:', documentToDelete);
-        await db.collection('documents').doc(documentToDelete).delete();
-        showSuccess('Document deleted successfully');
-        closeAllModals();
-        documentToDelete = null;
-    } catch (error) {
-        console.error('Error deleting document:', error);
-        showError('Error deleting document: ' + error.message);
-    } finally {
-        hideLoading();
-    }
 }
 
 // Notifications System
@@ -1130,32 +850,6 @@ function addEventListener(element, event, handler) {
 
 function navigateTo(url) {
     window.location.href = url;
-}
-
-function showModal(modal) {
-    if (modal) {
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        
-        // Add a small delay for animation
-        setTimeout(() => {
-            modal.style.opacity = '1';
-        }, 10);
-    }
-}
-
-function closeAllModals() {
-    console.log('Closing all modals');
-    if (editModal) {
-        editModal.style.display = 'none';
-        editModal.style.opacity = '0';
-    }
-    if (deleteModal) {
-        deleteModal.style.display = 'none';
-        deleteModal.style.opacity = '0';
-    }
-    documentToDelete = null;
-    document.body.style.overflow = '';
 }
 
 function showLoading() {
