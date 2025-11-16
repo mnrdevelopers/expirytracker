@@ -644,7 +644,8 @@ body {
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(5px);
-    z-index: 3000;
+    /* Increased z-index to ensure it is above fixed headers/sidebars */
+    z-index: 5000; 
     justify-content: center;
     align-items: center;
     padding: 20px;
@@ -696,6 +697,14 @@ body {
 .close-modal:hover {
     color: var(--text-primary);
 }
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end; /* Align buttons to the right/end */
+    gap: 12px;
+    margin-top: 24px;
+}
+
 
 /* Loading */
 .loading {
