@@ -1,16 +1,19 @@
-const CACHE_NAME = 'expiry-tracker-v1.0.0';
+const CACHE_NAME = 'expiry-tracker-v1.0.1';
+const BASE_PATH = '/expirytracker/';
+
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/dashboard.html',
-  '/documents.html',
-  '/add.html',
-  '/settings.html',
-  '/notifications.html',
-  '/style.css',
-  '/app.js',
-  '/firebase-config.js',
-  '/manifest.json',
+  BASE_PATH,
+  BASE_PATH + 'index.html',
+  BASE_PATH + 'dashboard.html',
+  BASE_PATH + 'documents.html',
+  BASE_PATH + 'add.html',
+  BASE_PATH + 'settings.html',
+  BASE_PATH + 'notifications.html',
+  BASE_PATH + 'style.css',
+  BASE_PATH + 'app.js',
+  BASE_PATH + 'firebase-config.js',
+  BASE_PATH + 'pwa.js',
+  BASE_PATH + 'manifest.json',
   'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css',
   'https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js',
@@ -18,7 +21,7 @@ const urlsToCache = [
   'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js'
 ];
 
-// Install event - cache essential files
+// Install event
 self.addEventListener('install', event => {
   console.log('Service Worker installing...');
   event.waitUntil(
@@ -31,7 +34,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activate event - clean up old caches
+// Activate event
 self.addEventListener('activate', event => {
   console.log('Service Worker activating...');
   event.waitUntil(
@@ -48,23 +51,26 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event
 self.addEventListener('fetch', event => {
-  // Skip cross-origin requests
-  if (!event.request.url.startsWith(self.location.origin)) {
+  // Skip non-GET requests and external URLs
+  if (event.request.method !== 'GET' || !event.request.url.includes('mnrdevelopers.github.io')) {
     return;
   }
 
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Return cached version or fetch from network
+        // Return cached version
         if (response) {
           return response;
         }
 
-        return fetch(event.request).then(response => {
-          // Check if we received a valid response
+        // Clone the request
+        const fetchRequest = event.request.clone();
+
+        return fetch(fetchRequest).then(response => {
+          // Check if valid response
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
@@ -78,25 +84,12 @@ self.addEventListener('fetch', event => {
             });
 
           return response;
+        }).catch(() => {
+          // If offline and requesting HTML, return index.html
+          if (event.request.destination === 'document') {
+            return caches.match(BASE_PATH + 'index.html');
+          }
         });
-      }).catch(() => {
-        // If both cache and network fail, show offline page
-        if (event.request.destination === 'document') {
-          return caches.match('/index.html');
-        }
       })
   );
 });
-
-// Background sync for offline data
-self.addEventListener('sync', event => {
-  if (event.tag === 'background-sync') {
-    console.log('Background sync triggered');
-    event.waitUntil(doBackgroundSync());
-  }
-});
-
-async function doBackgroundSync() {
-  // This would sync any pending operations when back online
-  console.log('Performing background sync...');
-}
