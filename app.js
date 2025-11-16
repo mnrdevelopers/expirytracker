@@ -1018,6 +1018,196 @@ async function loadSettings() {
     }
 }
 
+// Password Change Functionality
+function setupPasswordChangeModal() {
+    const changePasswordBtn = getElement('change-password-btn');
+    const changePasswordModal = getElement('change-password-modal');
+    const closePasswordModal = getElement('close-password-modal');
+    const cancelPasswordChange = getElement('cancel-password-change');
+    const changePasswordForm = getElement('change-password-form');
+    
+    // Open modal when clicking change password button
+    if (changePasswordBtn) {
+        addEventListener(changePasswordBtn, 'click', showPasswordChangeModal);
+    }
+    
+    // Close modal events
+    if (closePasswordModal) {
+        addEventListener(closePasswordModal, 'click', hidePasswordChangeModal);
+    }
+    
+    if (cancelPasswordChange) {
+        addEventListener(cancelPasswordChange, 'click', hidePasswordChangeModal);
+    }
+    
+    // Close modal when clicking outside
+    if (changePasswordModal) {
+        addEventListener(changePasswordModal, 'click', (e) => {
+            if (e.target === changePasswordModal) {
+                hidePasswordChangeModal();
+            }
+        });
+    }
+    
+    // Handle form submission
+    if (changePasswordForm) {
+        addEventListener(changePasswordForm, 'submit', handlePasswordChange);
+    }
+    
+    // Real-time password validation
+    const newPassword = getElement('new-password');
+    const confirmNewPassword = getElement('confirm-new-password');
+    
+    if (newPassword && confirmNewPassword) {
+        addEventListener(confirmNewPassword, 'input', validatePasswordMatch);
+    }
+}
+
+function showPasswordChangeModal() {
+    const modal = getElement('change-password-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        // Clear form and messages
+        clearPasswordMessages();
+        getElement('change-password-form').reset();
+    }
+}
+
+function hidePasswordChangeModal() {
+    const modal = getElement('change-password-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        clearPasswordMessages();
+        getElement('change-password-form').reset();
+    }
+}
+
+function clearPasswordMessages() {
+    const errorElement = getElement('password-error');
+    const successElement = getElement('password-success');
+    
+    if (errorElement) {
+        errorElement.style.display = 'none';
+        errorElement.textContent = '';
+    }
+    
+    if (successElement) {
+        successElement.style.display = 'none';
+        successElement.textContent = '';
+    }
+}
+
+function showPasswordError(message) {
+    const errorElement = getElement('password-error');
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
+    
+    const successElement = getElement('password-success');
+    if (successElement) {
+        successElement.style.display = 'none';
+    }
+}
+
+function showPasswordSuccess(message) {
+    const successElement = getElement('password-success');
+    if (successElement) {
+        successElement.textContent = message;
+        successElement.style.display = 'block';
+    }
+    
+    const errorElement = getElement('password-error');
+    if (errorElement) {
+        errorElement.style.display = 'none';
+    }
+}
+
+function validatePasswordMatch() {
+    const newPassword = getElement('new-password').value;
+    const confirmPassword = getElement('confirm-new-password').value;
+    const errorElement = getElement('password-error');
+    
+    if (confirmPassword && newPassword !== confirmPassword) {
+        showPasswordError('Passwords do not match');
+        return false;
+    } else if (confirmPassword && newPassword === confirmPassword) {
+        clearPasswordMessages();
+        return true;
+    }
+    
+    return true;
+}
+
+async function handlePasswordChange(e) {
+    e.preventDefault();
+    showLoading();
+    
+    const currentPassword = getElement('current-password').value;
+    const newPassword = getElement('new-password').value;
+    const confirmPassword = getElement('confirm-new-password').value;
+    
+    try {
+        // Validate inputs
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            throw new Error('Please fill in all fields');
+        }
+        
+        if (newPassword.length < 6) {
+            throw new Error('New password must be at least 6 characters long');
+        }
+        
+        if (newPassword !== confirmPassword) {
+            throw new Error('New passwords do not match');
+        }
+        
+        if (newPassword === currentPassword) {
+            throw new Error('New password must be different from current password');
+        }
+        
+        // Re-authenticate user before changing password
+        const user = auth.currentUser;
+        const email = user.email;
+        
+        // Re-authenticate with current password
+        const credential = firebase.auth.EmailAuthProvider.credential(email, currentPassword);
+        await user.reauthenticateWithCredential(credential);
+        
+        // Change password
+        await user.updatePassword(newPassword);
+        
+        showPasswordSuccess('Password changed successfully!');
+        
+        // Clear form and close modal after success
+        setTimeout(() => {
+            hidePasswordChangeModal();
+            showToast('Password updated successfully!', 'success');
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Password change error:', error);
+        
+        // Handle specific Firebase auth errors
+        let errorMessage = error.message;
+        
+        if (error.code === 'auth/wrong-password') {
+            errorMessage = 'Current password is incorrect';
+        } else if (error.code === 'auth/weak-password') {
+            errorMessage = 'New password is too weak';
+        } else if (error.code === 'auth/requires-recent-login') {
+            errorMessage = 'Please log in again to change your password';
+            // Optionally, you can force logout here
+            setTimeout(() => {
+                handleLogout();
+            }, 3000);
+        }
+        
+        showPasswordError(errorMessage);
+    } finally {
+        hideLoading();
+    }
+}
+
 // Utility Functions
 function getElement(id) {
     return document.getElementById(id);
