@@ -76,9 +76,9 @@
         </div>
     </main>
 
-    <!-- Edit Document Modal -->
+    <!-- Edit Document Modal - Compact Version -->
     <div id="edit-document-modal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content compact">
             <div class="modal-header">
                 <h3 class="modal-title">Edit Document</h3>
                 <button class="close-modal" id="close-edit-modal">
@@ -88,7 +88,7 @@
             <form id="edit-document-form">
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="edit-doc-type">Document Type</label>
+                        <label for="edit-doc-type" class="form-label">Document Type</label>
                         <select id="edit-doc-type" class="form-control" required>
                             <option value="">Select document type</option>
                             <option value="Vehicle RC">Vehicle RC</option>
@@ -98,26 +98,33 @@
                             <option value="Other">Other</option>
                         </select>
                     </div>
+                    
                     <div class="form-group">
-                        <label for="edit-doc-name">Document Name</label>
+                        <label for="edit-doc-name" class="form-label">Document Name</label>
                         <input type="text" id="edit-doc-name" class="form-control" placeholder="Enter document name" required>
                     </div>
+                    
                     <div class="form-group">
-                        <label for="edit-doc-number">Document Number</label>
+                        <label for="edit-doc-number" class="form-label">Document Number</label>
                         <input type="text" id="edit-doc-number" class="form-control" placeholder="Enter document number" required>
                     </div>
-                    <div class="form-group">
-                        <label for="edit-issue-date">Issue Date</label>
-                        <input type="date" id="edit-issue-date" class="form-control" required>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-issue-date" class="form-label">Issue Date</label>
+                            <input type="date" id="edit-issue-date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-expiry-date" class="form-label">Expiry Date</label>
+                            <input type="date" id="edit-expiry-date" class="form-control" required>
+                        </div>
                     </div>
+                    
                     <div class="form-group">
-                        <label for="edit-expiry-date">Expiry Date</label>
-                        <input type="date" id="edit-expiry-date" class="form-control" required>
+                        <label for="edit-notes" class="form-label">Notes (Optional)</label>
+                        <textarea id="edit-notes" class="form-control" rows="2" placeholder="Add any additional notes"></textarea>
                     </div>
-                    <div class="form-group">
-                        <label for="edit-notes">Notes (Optional)</label>
-                        <textarea id="edit-notes" class="form-control" rows="3" placeholder="Add any additional notes"></textarea>
-                    </div>
+                    
                     <div id="edit-error" class="error-message" style="display: none;"></div>
                     <div id="edit-success" class="success-message" style="display: none;"></div>
                 </div>
@@ -125,7 +132,7 @@
                     <button type="button" class="btn btn-outline" id="cancel-edit">Cancel</button>
                     <button type="submit" class="btn">
                         <i class="fas fa-save"></i>
-                        Update Document
+                        Update
                     </button>
                 </div>
             </form>
@@ -134,7 +141,7 @@
 
     <!-- Delete Confirmation Modal -->
     <div id="delete-modal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content compact">
             <div class="modal-header">
                 <h3 class="modal-title">Confirm Delete</h3>
                 <button class="close-modal" id="close-delete-modal">
@@ -142,11 +149,14 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete this document? This action cannot be undone.</p>
+                <p style="margin: 0; color: var(--text-secondary);">Are you sure you want to delete this document? This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" id="cancel-delete">Cancel</button>
-                <button class="btn btn-danger" id="confirm-delete">Delete</button>
+                <button class="btn btn-danger" id="confirm-delete">
+                    <i class="fas fa-trash"></i>
+                    Delete
+                </button>
             </div>
         </div>
     </div>
