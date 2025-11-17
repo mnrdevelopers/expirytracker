@@ -571,7 +571,7 @@ async function handleSignUp(email, password, name) {
     await db.collection('users').doc(userCredential.user.uid).set({
         name: name,
         email: email,
-        notificationPreferences: getDefaultPreferences(),
+        notificationPreferences: getDefaultPreferences(), // This should work now
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 }
