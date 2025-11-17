@@ -1,3 +1,4 @@
+// firebase-config.js
 // Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBnRKEd7Up3qbwC3mqCQhQLD2_Wd11rdzw",
@@ -15,7 +16,22 @@ firebase.initializeApp(firebaseConfig);
 // Initialize services
 const auth = firebase.auth();
 const db = firebase.firestore();
+const remoteConfig = firebase.remoteConfig();
 
-// Make sure they are globally accessible
+// Configure Remote Config
+remoteConfig.settings = {
+  minimumFetchIntervalMillis: 3600000, // 1 hour
+  fetchTimeoutMillis: 60000, // 1 minute
+};
+
+// Set default values for Remote Config
+remoteConfig.defaultConfig = {
+  'onesignal_app_id': '',
+  'onesignal_api_key': '',
+  'onesignal_web_push_key': ''
+};
+
+// Make services globally accessible
 window.auth = auth;
 window.db = db;
+window.remoteConfig = remoteConfig;
