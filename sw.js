@@ -1,4 +1,4 @@
-const CACHE_NAME = 'expiry-tracker-v1.0.1';
+const CACHE_NAME = 'expiry-tracker-v1.0.2';
 const BASE_PATH = '/expirytracker/';
 
 const urlsToCache = [
