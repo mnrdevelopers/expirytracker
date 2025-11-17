@@ -1158,20 +1158,59 @@ async function checkReminders() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
+    // Use today's date as part of the key to ensure daily reset
+    const todayKey = today.toDateString();
+    
     for (const doc of documents) {
         const daysRemaining = getDaysRemaining(doc.expiryDate);
-        // Use a composite key that includes the day to ensure we only remind once per day per type
-        const alertKey = `notification_${doc.id}_${daysRemaining}_${today.toDateString()}`;
         
-        // Check if this specific reminder (for this doc and this daysRemaining value) has already been sent today
-        const lastAlertDate = localStorage.getItem(alertKey);
-        
-        if (!lastAlertDate && shouldCreateNotification(daysRemaining, preferences)) {
-            await createNotificationForDocument(doc, daysRemaining);
-            // Set the reminder flag in localStorage only after successful creation
-            localStorage.setItem(alertKey, 'sent');
+        // Only proceed if this is a notification day based on preferences
+        if (shouldCreateNotification(daysRemaining, preferences)) {
+            // Create a unique key for this specific reminder
+            const alertKey = `notification_${doc.id}_${daysRemaining}_${todayKey}`;
+            
+            // Check if this specific reminder has already been sent today
+            const lastAlertDate = localStorage.getItem(alertKey);
+            
+            if (!lastAlertDate) {
+                await createNotificationForDocument(doc, daysRemaining);
+                // Set the reminder flag in localStorage with today's date
+                localStorage.setItem(alertKey, 'sent');
+            }
         }
     }
+    
+    // Clean up old notification keys (older than 30 days) to prevent localStorage bloat
+    cleanupOldNotificationKeys();
+}
+
+// Add this helper function to clean up old notification keys
+function cleanupOldNotificationKeys() {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const keysToRemove = [];
+    
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('notification_')) {
+            // Extract date from key (format: notification_docId_daysRemaining_dateString)
+            const parts = key.split('_');
+            if (parts.length >= 4) {
+                const dateString = parts.slice(3).join('_'); // Handle dates with spaces
+                const notificationDate = new Date(dateString);
+                
+                if (notificationDate < thirtyDaysAgo) {
+                    keysToRemove.push(key);
+                }
+            }
+        }
+    }
+    
+    // Remove old keys
+    keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+    });
 }
 
 function shouldCreateNotification(daysRemaining, preferences) {
