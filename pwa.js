@@ -183,12 +183,12 @@ class PWAHelper {
 
             const appleTouchIcon = document.createElement('link');
             appleTouchIcon.rel = 'apple-touch-icon';
-            appleTouchIcon.href = this.basePath + 'icons/icon-192x192.png';
+            appleTouchIcon.href = this.basePath + 'icon.png';
             document.head.appendChild(appleTouchIcon);
 
             const appleTouchStartupImage = document.createElement('link');
             appleTouchStartupImage.rel = 'apple-touch-startup-image';
-            appleTouchStartupImage.href = this.basePath + 'icons/splash.png';
+            appleTouchStartupImage.href = this.basePath + 'icon.png';
             document.head.appendChild(appleTouchStartupImage);
         }
     }
