@@ -3,16 +3,13 @@
   "short_name": "ExpiryTracker",
   "description": "Track your document expiry dates and get timely reminders",
   "version": "1.0.0",
-  "start_url": "/expirytracker/index.html",
+  "start_url": "/expirytracker/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#6366f1",
   "orientation": "portrait",
-  "scope": "/expirytracker/index.html",
-  "categories": [
-    "productivity",
-    "utilities"
-  ],
+  "scope": "/expirytracker/",
+  "categories": ["productivity", "utilities"],
   "lang": "en-US",
   "icons": [
     {
