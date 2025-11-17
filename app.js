@@ -74,39 +74,8 @@ function initializeAuthElements() {
     authError = getElement('auth-error');
     authSuccess = getElement('auth-success');
     
-    // Wrap password fields with toggle containers
-    wrapPasswordFields();
+    // Setup password toggles for index.html (login/signup page)
     setupPasswordToggles();
-}
-
-function wrapPasswordFields() {
-    const passwordInputs = [
-        { id: 'password', placeholder: 'Enter your password' },
-        { id: 'confirm-password', placeholder: 'Confirm your password' }
-    ];
-    
-    passwordInputs.forEach(({ id, placeholder }) => {
-        const input = getElement(id);
-        if (input) {
-            const container = document.createElement('div');
-            container.className = 'password-input-container';
-            
-            // Clone and replace to preserve attributes
-            const newInput = input.cloneNode(true);
-            newInput.placeholder = placeholder;
-            
-            const toggleBtn = document.createElement('button');
-            toggleBtn.type = 'button';
-            toggleBtn.className = 'password-toggle';
-            toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
-            toggleBtn.setAttribute('title', 'Show password');
-            
-            container.appendChild(newInput);
-            container.appendChild(toggleBtn);
-            
-            input.parentNode.replaceChild(container, input);
-        }
-    });
 }
 
 function initializePageElements() {
@@ -132,6 +101,11 @@ function initializePageElements() {
     
     // Loading
     loading = getElement('loading');
+
+    // Setup password toggles for settings.html (Change Password Modal)
+    if (document.getElementById('change-password-modal')) {
+        setupPasswordToggles();
+    }
 }
 
 // Event Listeners Setup
@@ -259,17 +233,28 @@ function collectEditFormData() {
 
 // Password Toggle Functionality
 function setupPasswordToggles() {
-    document.querySelectorAll('.password-input-container').forEach(container => {
-        const input = container.querySelector('input[type="password"], input[type="text"]');
-        const toggle = container.querySelector('.password-toggle');
+    // Select all password toggle buttons in the document
+    document.querySelectorAll('.password-input-container .password-toggle').forEach(toggle => {
+        // Find the input field relative to the button's container
+        const container = toggle.closest('.password-input-container');
+        const input = container ? container.querySelector('input[type="password"], input[type="text"]') : null;
         
         if (input && toggle) {
+            // Remove any existing listeners to prevent duplicates
+            // Note: In a real app, use .removeEventListener before adding, but for this context, 
+            // a fresh setup is safer due to how code is run. We'll stick to the core logic.
+            
             toggle.addEventListener('click', () => {
                 const isPassword = input.type === 'password';
                 input.type = isPassword ? 'text' : 'password';
-                toggle.innerHTML = isPassword ? 
-                    '<i class="fas fa-eye-slash"></i>' : 
-                    '<i class="fas fa-eye"></i>';
+                
+                // Toggle the icon
+                const icon = toggle.querySelector('i');
+                if (icon) {
+                    icon.className = isPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
+                }
+                
+                // Toggle the title attribute
                 toggle.setAttribute('title', isPassword ? 'Hide password' : 'Show password');
             });
         }
@@ -302,8 +287,11 @@ function showFieldValidation(fieldId, message, type = 'error') {
     const field = getElement(fieldId);
     if (!field) return;
     
+    // Use the parent of the input (which is the .form-group or similar)
+    const parentContainer = field.closest('.form-group') || field.parentNode;
+
     // Remove existing validation message
-    const existingMessage = field.parentNode.querySelector('.validation-message');
+    const existingMessage = parentContainer.querySelector('.validation-message');
     if (existingMessage) {
         existingMessage.remove();
     }
@@ -324,7 +312,7 @@ function showFieldValidation(fieldId, message, type = 'error') {
                     type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
         
         messageDiv.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
-        field.parentNode.appendChild(messageDiv);
+        parentContainer.appendChild(messageDiv);
     }
 }
 
@@ -333,7 +321,8 @@ function clearFieldValidation(fieldId) {
     if (!field) return;
     
     field.classList.remove('error', 'success');
-    const existingMessage = field.parentNode.querySelector('.validation-message');
+    const parentContainer = field.closest('.form-group') || field.parentNode;
+    const existingMessage = parentContainer.querySelector('.validation-message');
     if (existingMessage) {
         existingMessage.remove();
     }
@@ -347,6 +336,10 @@ function setupRealTimeValidation() {
     if (passwordInput) {
         addEventListener(passwordInput, 'input', () => {
             validatePasswordStrength(passwordInput.value);
+            // Also validate match if confirm password field is visible
+            if (confirmPasswordInput && confirmPasswordInput.closest('.form-group').style.display !== 'none') {
+                validatePasswordMatch();
+            }
         });
     }
     
@@ -407,15 +400,17 @@ function toggleAuthMode(e) {
     confirmPasswordField.style.display = config.showFields ? 'block' : 'none';
     
     // Add/remove password strength indicator
-    const passwordField = getElement('password').parentNode;
-    if (config.showFields && !getElement('password-strength')) {
+    const passwordGroup = getElement('password').closest('.form-group');
+    const existingStrengthDiv = getElement('password-strength');
+
+    if (config.showFields && !existingStrengthDiv) {
         const strengthDiv = document.createElement('div');
         strengthDiv.id = 'password-strength';
         strengthDiv.className = 'password-strength';
         strengthDiv.innerHTML = '<div class="strength-bar strength-weak"></div>';
-        passwordField.appendChild(strengthDiv);
-    } else if (!config.showFields && getElement('password-strength')) {
-        getElement('password-strength').remove();
+        passwordGroup.appendChild(strengthDiv);
+    } else if (!config.showFields && existingStrengthDiv) {
+        existingStrengthDiv.remove();
     }
     
     // Clear form and messages
@@ -450,11 +445,13 @@ async function handleAuthSubmit(e) {
         
         // Basic validation
         if (!email) {
-            throw new Error('Please enter your email address');
+            showFieldValidation('email', 'Please enter your email address', 'error');
+            throw new Error('Email missing');
         }
         
         if (!password) {
-            throw new Error('Please enter your password');
+            showFieldValidation('password', 'Please enter your password', 'error');
+            throw new Error('Password missing');
         }
         
         if (isLoginMode) {
@@ -526,7 +523,7 @@ function handleAuthError(error) {
             break;
     }
     
-    // Only show in general area if not field-specific
+    // Only show in general area if not field-specific and not already handled by field validation
     if (!error.code || !['auth/invalid-email', 'auth/user-not-found', 'auth/wrong-password', 'auth/email-already-in-use', 'auth/weak-password'].includes(error.code)) {
         showAuthError(errorMessage);
     }
@@ -543,25 +540,26 @@ function validateSignUp(name, password, confirmPassword) {
     if (!name || name.trim().length < 2) {
         showFieldValidation('name', 'Please enter your full name (min 2 characters)', 'error');
         hasError = true;
+    } else {
+        showFieldValidation('name', 'Name looks good!', 'success');
     }
     
     if (password.length < 6) {
         showFieldValidation('password', 'Password must be at least 6 characters', 'error');
         hasError = true;
+    } else {
+        // Validation handled by real-time validation, just check length here
     }
     
     if (password !== confirmPassword) {
         showFieldValidation('confirm-password', 'Passwords do not match', 'error');
         hasError = true;
+    } else if (confirmPassword) {
+        showFieldValidation('confirm-password', 'Passwords match', 'success');
     }
     
     if (hasError) {
         throw new Error('Please fix the validation errors above');
-    }
-    
-    // Show success for valid fields
-    if (name && name.trim().length >= 2) {
-        showFieldValidation('name', 'Name looks good!', 'success');
     }
 }
 
@@ -592,7 +590,7 @@ function handleForgotPassword(e) {
             showAuthSuccess('Password reset email sent. Check your inbox.');
         })
         .catch(error => {
-            showAuthError(error.message);
+            handleAuthError(error);
         });
 }
 
@@ -1446,12 +1444,23 @@ function setupPasswordChangeModal() {
         addEventListener(changePasswordForm, 'submit', handlePasswordChange);
     }
     
-    // Real-time password validation
+    // Real-time password validation (re-enabling for modal fields)
     const newPassword = getElement('new-password');
     const confirmNewPassword = getElement('confirm-new-password');
     
-    if (newPassword && confirmNewPassword) {
-        addEventListener(confirmNewPassword, 'input', validatePasswordMatch);
+    if (newPassword) {
+        addEventListener(newPassword, 'input', () => {
+            // Simple validation check for modal
+            if (confirmNewPassword && newPassword.value && confirmNewPassword.value) {
+                validateNewPasswordMatch();
+            } else if (confirmNewPassword) {
+                clearFieldValidation('confirm-new-password');
+            }
+        });
+    }
+    
+    if (confirmNewPassword) {
+        addEventListener(confirmNewPassword, 'input', validateNewPasswordMatch);
     }
 }
 
@@ -1487,6 +1496,11 @@ function clearPasswordMessages() {
         successElement.style.display = 'none';
         successElement.textContent = '';
     }
+    
+    // Clear field validations in the modal form
+    clearFieldValidation('current-password');
+    clearFieldValidation('new-password');
+    clearFieldValidation('confirm-new-password');
 }
 
 function showPasswordError(message) {
@@ -1515,27 +1529,29 @@ function showPasswordSuccess(message) {
     }
 }
 
-function validatePasswordMatch() {
-    const password = getElement('password')?.value;
-    const confirmPassword = getElement('confirm-password')?.value;
+function validateNewPasswordMatch() {
+    const newPassword = getElement('new-password').value;
+    const confirmNewPassword = getElement('confirm-new-password').value;
     
-    if (!confirmPassword) {
-        clearFieldValidation('confirm-password');
+    if (!confirmNewPassword) {
+        clearFieldValidation('confirm-new-password');
         return true;
     }
     
-    if (password === confirmPassword) {
-        showFieldValidation('confirm-password', 'Passwords match', 'success');
+    if (newPassword === confirmNewPassword) {
+        showFieldValidation('confirm-new-password', 'Passwords match', 'success');
         return true;
     } else {
-        showFieldValidation('confirm-password', 'Passwords do not match', 'error');
+        showFieldValidation('confirm-new-password', 'Passwords do not match', 'error');
         return false;
     }
 }
 
 async function handlePasswordChange(e) {
     e.preventDefault();
-    showLoading();
+    const submitButton = getElement('submit-password-change');
+    showButtonLoading(submitButton);
+    clearPasswordMessages();
     
     const currentPassword = getElement('current-password').value;
     const newPassword = getElement('new-password').value;
@@ -1543,19 +1559,26 @@ async function handlePasswordChange(e) {
     
     try {
         // Validate inputs
-        if (!currentPassword || !newPassword || !confirmPassword) {
-            throw new Error('Please fill in all fields');
+        clearFieldValidation('current-password');
+        clearFieldValidation('new-password');
+        clearFieldValidation('confirm-new-password');
+
+        if (!currentPassword) {
+            showFieldValidation('current-password', 'Current password is required', 'error');
+            throw new Error('Current password missing');
         }
-        
+
         if (newPassword.length < 6) {
-            throw new Error('New password must be at least 6 characters long');
+            showFieldValidation('new-password', 'Password must be at least 6 characters', 'error');
+            throw new Error('New password too short');
         }
         
-        if (newPassword !== confirmPassword) {
+        if (!validateNewPasswordMatch()) {
             throw new Error('New passwords do not match');
         }
         
         if (newPassword === currentPassword) {
+            showFieldValidation('new-password', 'New password must be different from current password', 'error');
             throw new Error('New password must be different from current password');
         }
         
@@ -1582,23 +1605,29 @@ async function handlePasswordChange(e) {
         console.error('Password change error:', error);
         
         // Handle specific Firebase auth errors
-        let errorMessage = error.message;
+        let errorMessage = 'An unexpected error occurred.';
         
         if (error.code === 'auth/wrong-password') {
             errorMessage = 'Current password is incorrect';
+            showFieldValidation('current-password', errorMessage, 'error');
         } else if (error.code === 'auth/weak-password') {
             errorMessage = 'New password is too weak';
+            showFieldValidation('new-password', errorMessage, 'error');
         } else if (error.code === 'auth/requires-recent-login') {
             errorMessage = 'Please log in again to change your password';
+            showPasswordError(errorMessage);
             // Optionally, you can force logout here
             setTimeout(() => {
                 handleLogout();
             }, 3000);
+        } else if (error.message && error.message.includes('Current password missing')) {
+            // Already handled by field validation
+        } else {
+            showPasswordError(error.message);
         }
         
-        showPasswordError(errorMessage);
     } finally {
-        hideLoading();
+        hideButtonLoading(submitButton);
     }
 }
 
@@ -1664,13 +1693,8 @@ function showSuccess(message) {
 function showToast(message, type = 'info') {
     // Simple toast implementation
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <div class="toast-content">
-            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : type === 'warning' ? 'exclamation-circle' : 'info'}"></i>
-            <span>${message}</span>
-        </div>
-    `;
+    toast.className = `pwa-toast ${type}`; // Use pwa-toast class
+    toast.textContent = message; // Use textContent for message
     
     document.body.appendChild(toast);
     
